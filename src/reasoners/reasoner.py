@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
-
-import src.utils.exc as exc
+from src.utils import exc
 
 
 class Reasoner(object):

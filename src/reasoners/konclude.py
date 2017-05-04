@@ -2,9 +2,7 @@ import re
 import os
 
 from reasoner import Reasoner, Stats
-import src.utils.exc as exc
-import src.utils.proc as proc
-import src.utils.jar as jar
+from src.utils import exc, jar, proc
 
 
 class Konclude(Reasoner):

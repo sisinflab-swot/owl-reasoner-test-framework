@@ -1,8 +1,7 @@
 import re
 
 from reasoner import Reasoner, Stats
-import src.utils.exc as exc
-import src.utils.proc as proc
+from src.utils import exc, proc
 
 
 class MiniME(Reasoner):

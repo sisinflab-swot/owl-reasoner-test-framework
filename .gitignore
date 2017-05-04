@@ -253,5 +253,5 @@ $RECYCLE.BIN/
 
 # Project specific
 /bin
-/res
+/data
 /wrk

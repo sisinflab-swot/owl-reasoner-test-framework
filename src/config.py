@@ -1,8 +1,8 @@
 import sys
 from os import path
 
-from reasoners.minime import MiniME
 from reasoners.konclude import Konclude
+from reasoners.minime import MiniME
 
 
 debug = True
@@ -12,11 +12,11 @@ class Paths(object):
     """Paths config namespace."""
     DIR = path.dirname(path.dirname(path.realpath(sys.argv[0])))
     BIN_DIR = path.join(DIR, 'bin')
-    RES_DIR = path.join(DIR, 'res')
+    DATA_DIR = path.join(DIR, 'data')
     WRK_DIR = path.join(DIR, 'wrk')
 
-    FUNC_DIR = path.join(RES_DIR, 'dataset', 'functional')
-    XML_DIR = path.join(RES_DIR, 'dataset', 'rdfxml')
+    FUNC_DIR = path.join(DATA_DIR, 'functional')
+    XML_DIR = path.join(DATA_DIR, 'rdfxml')
     TEMP_DIR = path.join(WRK_DIR, 'temp')
 
     KONCLUDE = path.join(BIN_DIR, 'Konclude', 'Binaries', 'Konclude')
