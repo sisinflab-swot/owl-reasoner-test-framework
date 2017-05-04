@@ -56,12 +56,10 @@ class Konclude(Reasoner):
         :return : Reasoning task stats.
         """
         exc.raise_if_falsy(stdout=stdout)
-        result = re.search(r'>> Ontology parsed in (.*) ms.', stdout)
 
-        if result:
-            parsing_ms = float(result.group(1))
-        else:
-            parsing_ms = None
+        result = re.search(r'>> Ontology parsed in (.*) ms.', stdout)
+        exc.raise_if_falsy(result=result)
+        parsing_ms = float(result.group(1))
 
         reasoning_ms = None
 
@@ -74,5 +72,7 @@ class Konclude(Reasoner):
                     reasoning_ms = ms
                 else:
                     reasoning_ms += ms
+
+        exc.raise_if_none(reasoning_ms=reasoning_ms)
 
         return Stats(parsing_ms=parsing_ms, reasoning_ms=reasoning_ms, error=stderr)

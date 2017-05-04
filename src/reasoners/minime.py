@@ -38,16 +38,12 @@ class MiniME(Reasoner):
         exc.raise_if_falsy(stdout=stdout)
         result = re.search(r'Parsing: (.*) ms', stdout)
 
-        if result:
-            parsing_ms = float(result.group(1))
-        else:
-            parsing_ms = None
+        exc.raise_if_falsy(result=result)
+        parsing_ms = float(result.group(1))
 
         result = re.search(r'Classification: (.*) ms', stdout)
+        exc.raise_if_falsy(result=result)
 
-        if result:
-            reasoning_ms = float(result.group(1))
-        else:
-            reasoning_ms = None
+        reasoning_ms = float(result.group(1))
 
         return Stats(parsing_ms=parsing_ms, reasoning_ms=reasoning_ms, error=stderr)
