@@ -17,7 +17,10 @@ class ClassificationCorrectnessTest(Test):
         self.reference_out = os.path.join(config.Paths.TEMP_DIR, 'reference.txt')
         self.minime_out = os.path.join(config.Paths.TEMP_DIR, 'minime.txt')
 
-    def run(self, func_ontology, xml_ontology, logger):
+    def setup(self, logger, csv_writer):
+        csv_writer.writerow(['Ontology', 'Result', 'Failure reason'])
+
+    def run(self, func_ontology, xml_ontology, logger, csv_writer):
 
         fileutils.remove_dir_contents(config.Paths.TEMP_DIR)
 
@@ -37,13 +40,11 @@ class ClassificationCorrectnessTest(Test):
         logger.log('Result: ', endl=False)
 
         if filecmp.cmp(self.reference_out, self.minime_out, shallow=False):
-            success = True
             logger.log('success', color=echo.Color.GREEN)
+            csv_writer.writerow([func_ontology.name, 'success'])
         else:
-            success = False
             logger.log('failure', color=echo.Color.RED)
 
-        if not success:
             # Attempt to detect failure reason
             logger.log('Reason: ', endl=False)
 
@@ -55,6 +56,7 @@ class ClassificationCorrectnessTest(Test):
                 reason = 'unknown'
 
             logger.log(reason, color=echo.Color.YELLOW)
+            csv_writer.writerow([func_ontology.name, 'failure', reason])
 
 
 class ClassificationTimeTest(Test):
@@ -64,15 +66,24 @@ class ClassificationTimeTest(Test):
     def name(self):
         return 'classification time'
 
-    def run(self, func_ontology, xml_ontology, logger):
+    def setup(self, logger, csv_writer):
+        reasoners = [r.name for r in config.Reasoners.third_party]
+        csv_writer.writerow(['Ontology', config.Reasoners.miniME.name] + reasoners)
+
+    def run(self, func_ontology, xml_ontology, logger, csv_writer):
 
         minime = config.Reasoners.miniME
+        results = []
 
         logger.log('{}: '.format(minime.name), endl=False)
         stats = minime.classify(xml_ontology.path)
+        results.append(stats.reasoning_ms)
         logger.log('{:.0f} ms'.format(stats.reasoning_ms))
 
         for reasoner in config.Reasoners.third_party:
             logger.log('{}: '.format(reasoner.name), endl=False)
             stats = reasoner.classify(func_ontology.path)
+            results.append(stats.reasoning_ms)
             logger.log('{:.0f} ms'.format(stats.reasoning_ms))
+
+        csv_writer.writerow([xml_ontology.name] + results)

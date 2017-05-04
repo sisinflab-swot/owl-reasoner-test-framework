@@ -24,6 +24,7 @@ class Paths(object):
     OWLTOOL = path.join(BIN_DIR, 'OwlTool', 'owltool.jar')
 
     LOG = path.join(WRK_DIR, 'log.txt')
+    RESULTS = path.join(WRK_DIR, 'results.csv')
 
 
 class Reasoners(object):

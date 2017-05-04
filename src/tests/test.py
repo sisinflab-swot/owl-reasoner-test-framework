@@ -1,3 +1,4 @@
+import csv
 import os
 from abc import ABCMeta, abstractmethod, abstractproperty
 
@@ -35,12 +36,22 @@ class Test(object):
         pass
 
     @abstractmethod
-    def run(self, func_ontology, xml_ontology, logger):
+    def run(self, func_ontology, xml_ontology, logger, csv_writer):
         """Runs test over a single ontology.
 
         :param Ontology func_ontology : Functional syntax ontology.
         :param Ontology xml_ontology : RDF/XML syntax ontology.
         :param Logger logger : Logger instance.
+        :param csv.writer csv_writer : CSV writer instance.
+        """
+        pass
+
+    @abstractmethod
+    def setup(self, logger, csv_writer):
+        """Called before the test starts iterating on ontologies.
+
+        :param Logger logger : Logger instance.
+        :param csv.writer csv_writer : CSV writer instance.
         """
         pass
 
@@ -60,7 +71,10 @@ class Test(object):
         logger.clear()
 
         # Start test
-        with logger:
+        with logger, open(config.Paths.RESULTS, mode='wb') as csv_file:
+            csv_writer = csv.writer(csv_file)
+            self.setup(logger, csv_writer)
+
             for onto_name in ontologies:
                 func_ontology = Ontology(os.path.join(config.Paths.FUNC_DIR, onto_name))
                 xml_ontology = Ontology(os.path.join(config.Paths.XML_DIR, onto_name))
@@ -69,6 +83,6 @@ class Test(object):
                 logger.log(' (Functional: {} | RDFXML: {})'.format(func_ontology.readable_size,
                                                                    xml_ontology.readable_size))
 
-                self.run(func_ontology, xml_ontology, logger)
+                self.run(func_ontology, xml_ontology, logger, csv_writer)
 
                 logger.log('')
