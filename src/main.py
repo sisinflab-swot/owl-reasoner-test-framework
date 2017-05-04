@@ -1,7 +1,7 @@
 import sys
 
+import cli
 import config
-from tests import classification
 from utils import echo
 
 
@@ -10,8 +10,10 @@ from utils import echo
 
 def main():
     """:rtype : int"""
-    classification.correctness()
-    return 0
+    parser = cli.build_parser()
+    args = parser.parse_args()
+    return args.func(args)
+
 
 if __name__ == '__main__':
     try:
