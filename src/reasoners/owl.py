@@ -1,8 +1,10 @@
+import os
 from abc import ABCMeta, abstractmethod, abstractproperty
-from src.utils import exc
+
+from src.utils import exc, fileutils
 
 
-class Reasoner(object):
+class OWLReasoner(object):
     """Abstract reasoner wrapper."""
     __metaclass__ = ABCMeta
 
@@ -11,6 +13,11 @@ class Reasoner(object):
     @abstractproperty
     def name(self):
         """:rtype : str"""
+        pass
+
+    @abstractproperty
+    def supported_syntaxes(self):
+        """:rtype : list[str]"""
         pass
 
     # Public methods
@@ -30,6 +37,35 @@ class Reasoner(object):
         :return : Stats for the classification task.
         """
         pass
+
+
+class OWLOntology(object):
+    """Models ontology files."""
+
+    @property
+    def name(self):
+        """:rtype : str"""
+        return os.path.basename(self.path)
+
+    @property
+    def readable_size(self):
+        """:rtype : str"""
+        return fileutils.human_readable_size(self.path)
+
+    def __init__(self, path, syntax):
+        """
+        :param str path : The path of the ontology.
+        :param str syntax : The syntax of the ontology.
+        """
+        exc.raise_if_not_found(path, file_type='file')
+        self.path = path
+        self.syntax = syntax
+
+
+class OWLSyntax(object):
+    """OWL ontology syntax namespace."""
+    RDFXML = 'rdfxml'
+    FUNCTIONAL = 'functional'
 
 
 class Stats(object):

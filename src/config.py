@@ -33,4 +33,4 @@ class Reasoners(object):
     miniME = MiniME(Paths.MINIME)
 
     reference = konclude
-    third_party = [konclude]
+    all = [miniME, konclude]

@@ -1,10 +1,10 @@
 import re
 
-from reasoner import Reasoner, Stats
+from owl import OWLReasoner, OWLSyntax, Stats
 from src.utils import exc, proc
 
 
-class MiniME(Reasoner):
+class MiniME(OWLReasoner):
     """MiniME reasoner wrapper."""
 
     # Overrides
@@ -12,6 +12,10 @@ class MiniME(Reasoner):
     @property
     def name(self):
         return 'MiniME'
+
+    @property
+    def supported_syntaxes(self):
+        return [OWLSyntax.RDFXML]
 
     def classify(self, input_file, output_file=None):
         exc.raise_if_not_found(input_file, file_type='file')

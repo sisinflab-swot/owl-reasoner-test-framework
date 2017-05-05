@@ -3,27 +3,9 @@ import os
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 from src import config
-from src.utils import echo, exc, fileutils
+from src.reasoners.owl import OWLOntology, OWLSyntax
+from src.utils import echo, fileutils
 from src.utils.logger import Logger
-
-
-class Ontology(object):
-    """Models ontology files."""
-
-    @property
-    def name(self):
-        """:rtype : str"""
-        return os.path.basename(self.path)
-
-    @property
-    def readable_size(self):
-        """:rtype : str"""
-        return fileutils.human_readable_size(self.path)
-
-    def __init__(self, path):
-        """:param str path : The path of the ontology."""
-        exc.raise_if_not_found(path, file_type='file')
-        self.path = path
 
 
 class Test(object):
@@ -36,11 +18,11 @@ class Test(object):
         pass
 
     @abstractmethod
-    def run(self, func_ontology, xml_ontology, logger, csv_writer):
+    def run(self, onto_name, ontologies, logger, csv_writer):
         """Runs test over a single ontology.
 
-        :param Ontology func_ontology : Functional syntax ontology.
-        :param Ontology xml_ontology : RDF/XML syntax ontology.
+        :param str onto_name : File name of the ontology.
+        :param list[OWLOntology] ontologies : Ontologies in different syntaxes.
         :param Logger logger : Logger instance.
         :param csv.writer csv_writer : CSV writer instance.
         """
@@ -57,11 +39,11 @@ class Test(object):
 
     def start(self):
         """Starts the test."""
-        ontologies = [f for f in os.listdir(config.Paths.FUNC_DIR) if f.endswith('.owl')]
+        onto_names = [f for f in os.listdir(config.Paths.FUNC_DIR) if f.endswith('.owl')]
         logger = Logger(config.Paths.LOG)
 
         # Hello
-        echo.pretty('Starting {} test on {} ontologies, this may take a while...'.format(self.name, len(ontologies)),
+        echo.pretty('Starting {} test on {} ontologies, this may take a while...'.format(self.name, len(onto_names)),
                     color=echo.Color.GREEN)
 
         # Setup/cleanup
@@ -75,14 +57,16 @@ class Test(object):
             csv_writer = csv.writer(csv_file)
             self.setup(logger, csv_writer)
 
-            for onto_name in ontologies:
-                func_ontology = Ontology(os.path.join(config.Paths.FUNC_DIR, onto_name))
-                xml_ontology = Ontology(os.path.join(config.Paths.XML_DIR, onto_name))
+            for onto_name in onto_names:
+                func_ontology = OWLOntology(os.path.join(config.Paths.FUNC_DIR, onto_name), OWLSyntax.FUNCTIONAL)
+                xml_ontology = OWLOntology(os.path.join(config.Paths.XML_DIR, onto_name), OWLSyntax.RDFXML)
 
-                logger.log(onto_name, color=echo.Color.YELLOW, endl=False)
-                logger.log(' (Functional: {} | RDFXML: {})'.format(func_ontology.readable_size,
-                                                                   xml_ontology.readable_size))
+                ontologies = [func_ontology, xml_ontology]
+                size_str = ' | '.join(['{}: {}'.format(o.syntax, o.readable_size) for o in ontologies])
 
-                self.run(func_ontology, xml_ontology, logger, csv_writer)
+                logger.log('{}'.format(onto_name), color=echo.Color.YELLOW, endl=False)
+                logger.log(' ({})'.format(size_str))
+
+                self.run(onto_name, ontologies, logger, csv_writer)
 
                 logger.log('')

@@ -1,11 +1,11 @@
 import re
 import os
 
-from reasoner import Reasoner, Stats
+from owl import OWLReasoner, OWLSyntax, Stats
 from src.utils import exc, jar, proc
 
 
-class Konclude(Reasoner):
+class Konclude(OWLReasoner):
     """Konclude reasoner wrapper."""
 
     # Public methods
@@ -24,6 +24,10 @@ class Konclude(Reasoner):
     @property
     def name(self):
         return 'Konclude'
+
+    @property
+    def supported_syntaxes(self):
+        return [OWLSyntax.FUNCTIONAL]
 
     def classify(self, input_file, output_file=None):
         exc.raise_if_not_found(input_file, file_type='file')
@@ -56,7 +60,6 @@ class Konclude(Reasoner):
         :return : Reasoning task stats.
         """
         exc.raise_if_falsy(stdout=stdout)
-
         result = re.search(r'>> Ontology parsed in (.*) ms.', stdout)
         exc.raise_if_falsy(result=result)
         parsing_ms = float(result.group(1))
