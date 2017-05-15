@@ -96,9 +96,15 @@ class ClassificationTimeTest(Test):
                 if ontology.syntax not in reasoner.supported_syntaxes:
                     continue
 
-                stats = reasoner.classify(ontology.path)
-                results.extend([stats.parsing_ms, stats.reasoning_ms])
-                logger.log('    {}: Parsing {:.0f} ms | Classification {:.0f} ms'.format(ontology.syntax,
-                                                                                         stats.parsing_ms,
-                                                                                         stats.reasoning_ms))
+                try:
+                    stats = reasoner.classify(ontology.path)
+                except ValueError:
+                    results.extend(['error', 'error'])
+                    logger.log('    {}: error'.format(ontology.syntax))
+                else:
+                    results.extend([stats.parsing_ms, stats.reasoning_ms])
+                    logger.log('    {}: Parsing {:.0f} ms | Classification {:.0f} ms'.format(ontology.syntax,
+                                                                                             stats.parsing_ms,
+                                                                                             stats.reasoning_ms))
+
         csv_writer.writerow([onto_name] + results)
