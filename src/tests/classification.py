@@ -57,7 +57,7 @@ class ClassificationCorrectnessTest(Test):
 
             if 'raptor error -' in minime_stats.error:
                 reason = 'raptor parsing error'
-            elif fileutils.contains(xml_ontology, '// General axioms'):
+            elif fileutils.contains(xml_ontology.path, '// General axioms'):
                 reason = 'contains general concept inclusions'
             else:
                 reason = 'unknown'
