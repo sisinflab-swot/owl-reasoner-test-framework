@@ -45,7 +45,7 @@ class Konclude(OWLReasoner):
 
         if output_file:
             args = ['print-tbox', '-o', output_file, classification_out]
-            jar.call(self.__owl_tool_path, args=args, output_action=proc.OutputAction.RETURN)
+            jar.call(self.__owl_tool_path, args=args, output_action=proc.OutputAction.DISCARD)
 
         return self.__extract_stats(call_result.stdout, call_result.stderr)
 
@@ -60,22 +60,18 @@ class Konclude(OWLReasoner):
         :return : Reasoning task stats.
         """
         exc.raise_if_falsy(stdout=stdout)
+
         result = re.search(r'>> Ontology parsed in (.*) ms.', stdout)
         exc.raise_if_falsy(result=result)
+
         parsing_ms = float(result.group(1))
 
-        reasoning_ms = None
+        reasoning_ms = 0.0
 
         for task in ['preprocessing', 'precomputing', 'classification']:
             result = re.search(r'>> Finished {} in (.*) ms'.format(task), stdout)
+            exc.raise_if_falsy(result=result)
 
-            if result:
-                ms = float(result.group(1))
-                if reasoning_ms is None:
-                    reasoning_ms = ms
-                else:
-                    reasoning_ms += ms
-
-        exc.raise_if_none(reasoning_ms=reasoning_ms)
+            reasoning_ms += float(result.group(1))
 
         return Stats(parsing_ms=parsing_ms, reasoning_ms=reasoning_ms, error=stderr)
