@@ -1,6 +1,7 @@
 import sys
 from os import path
 
+from reasoners.fact import Fact
 from reasoners.hermit import HermiT
 from reasoners.konclude import Konclude
 from reasoners.minime import MiniME
@@ -20,6 +21,7 @@ class Paths(object):
     XML_DIR = path.join(DATA_DIR, 'rdfxml')
     TEMP_DIR = path.join(WRK_DIR, 'temp')
 
+    FACT = path.join(BIN_DIR, 'Fact++', 'factcli.jar')
     HERMIT = path.join(BIN_DIR, 'HermiT', 'HermiT.jar')
     KONCLUDE = path.join(BIN_DIR, 'Konclude', 'Binaries', 'Konclude')
     MINIME = path.join(BIN_DIR, 'MiniME', 'MiniME-cli')
@@ -31,9 +33,10 @@ class Paths(object):
 
 class Reasoners(object):
     """Reasoners config namespace."""
+    fact = Fact(Paths.FACT, Paths.OWLTOOL)
     hermit = HermiT(Paths.HERMIT, Paths.OWLTOOL)
     konclude = Konclude(Paths.KONCLUDE, Paths.OWLTOOL)
     miniME = MiniME(Paths.MINIME)
 
-    reference = hermit
-    all = [miniME, konclude, hermit]
+    reference = konclude
+    all = [miniME, fact, hermit, konclude]
