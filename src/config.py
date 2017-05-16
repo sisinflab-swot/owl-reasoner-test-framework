@@ -5,6 +5,7 @@ from reasoners.fact import Fact
 from reasoners.hermit import HermiT
 from reasoners.konclude import Konclude
 from reasoners.minime import MiniME
+from reasoners.trowl import TrOWL
 
 
 debug = True
@@ -26,6 +27,7 @@ class Paths(object):
     KONCLUDE = path.join(BIN_DIR, 'Konclude', 'Binaries', 'Konclude')
     MINIME = path.join(BIN_DIR, 'MiniME', 'MiniME-cli')
     OWLTOOL = path.join(BIN_DIR, 'OwlTool', 'owltool.jar')
+    TROWL = path.join(BIN_DIR, 'TrOWL', 'trowlcli.jar')
 
     LOG = path.join(WRK_DIR, 'log.txt')
     RESULTS = path.join(WRK_DIR, 'results.csv')
@@ -37,6 +39,7 @@ class Reasoners(object):
     hermit = HermiT(Paths.HERMIT, Paths.OWLTOOL)
     konclude = Konclude(Paths.KONCLUDE, Paths.OWLTOOL)
     miniME = MiniME(Paths.MINIME)
+    trowl = TrOWL(Paths.TROWL, Paths.OWLTOOL)
 
     reference = konclude
-    all = [miniME, fact, hermit, konclude]
+    all = [miniME, fact, hermit, konclude, trowl]
