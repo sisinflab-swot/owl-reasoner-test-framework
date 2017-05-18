@@ -29,7 +29,7 @@ class Konclude(OWLReasoner):
     def supported_syntaxes(self):
         return [OWLSyntax.FUNCTIONAL]
 
-    def classify(self, input_file, output_file=None):
+    def classify(self, input_file, output_file=None, timeout=None):
         exc.raise_if_not_found(input_file, file_type='file')
 
         args = [self._path, 'classification', '-i', input_file]
@@ -41,7 +41,7 @@ class Konclude(OWLReasoner):
 
         args.append('-v')
 
-        call_result = proc.call(args, output_action=proc.OutputAction.RETURN)
+        call_result = proc.call(args, output_action=proc.OutputAction.RETURN, timeout=timeout)
 
         if output_file:
             args = ['print-tbox', '-o', output_file, classification_out]

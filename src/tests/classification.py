@@ -4,6 +4,7 @@ import os
 from src import config
 from src.reasoners.owl import OWLSyntax
 from src.utils import echo, fileutils
+from src.utils.proc import WatchdogException
 from test import Test
 
 
@@ -85,6 +86,7 @@ class ClassificationTimeTest(Test):
 
         csv_writer.writerow(columns)
 
+    # noinspection PyBroadException
     def run(self, onto_name, ontologies, logger, csv_writer):
 
         results = []
@@ -97,8 +99,11 @@ class ClassificationTimeTest(Test):
                     continue
 
                 try:
-                    stats = reasoner.classify(ontology.path)
-                except ValueError:
+                    stats = reasoner.classify(ontology.path, timeout=config.Reasoners.classification_timeout)
+                except WatchdogException:
+                    results.extend(['timeout', 'timeout'])
+                    logger.log('    {}: timeout'.format(ontology.syntax))
+                except Exception:
                     results.extend(['error', 'error'])
                     logger.log('    {}: error'.format(ontology.syntax))
                 else:

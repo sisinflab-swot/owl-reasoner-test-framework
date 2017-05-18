@@ -43,3 +43,5 @@ class Reasoners(object):
 
     reference = konclude
     all = [miniME, fact, hermit, konclude, trowl]
+
+    classification_timeout = 300.0

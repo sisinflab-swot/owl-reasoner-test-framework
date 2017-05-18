@@ -17,7 +17,7 @@ class MiniME(OWLReasoner):
     def supported_syntaxes(self):
         return [OWLSyntax.RDFXML]
 
-    def classify(self, input_file, output_file=None):
+    def classify(self, input_file, output_file=None, timeout=None):
         exc.raise_if_not_found(input_file, file_type='file')
 
         args = [self._path, 'classification', '-i', input_file]
@@ -25,7 +25,7 @@ class MiniME(OWLReasoner):
         if output_file:
             args.extend(['-o', output_file])
 
-        call_result = proc.call(args, output_action=proc.OutputAction.RETURN)
+        call_result = proc.call(args, output_action=proc.OutputAction.RETURN, timeout=timeout)
 
         return self.__extract_stats(call_result.stdout, call_result.stderr)
 

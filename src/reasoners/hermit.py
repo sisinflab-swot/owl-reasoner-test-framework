@@ -29,7 +29,7 @@ class HermiT(OWLReasoner):
     def supported_syntaxes(self):
         return [OWLSyntax.RDFXML, OWLSyntax.FUNCTIONAL]
 
-    def classify(self, input_file, output_file=None):
+    def classify(self, input_file, output_file=None, timeout=None):
         exc.raise_if_not_found(input_file, file_type='file')
 
         args = ['-v', '-c']
@@ -43,7 +43,7 @@ class HermiT(OWLReasoner):
 
         args.append(input_file)
 
-        call_result = jar.call(self._path, args=args, output_action=proc.OutputAction.RETURN)
+        call_result = jar.call(self._path, args=args, output_action=proc.OutputAction.RETURN, timeout=timeout)
 
         if output_file:
             args = ['print-tbox', '-o', output_file, classification_out]

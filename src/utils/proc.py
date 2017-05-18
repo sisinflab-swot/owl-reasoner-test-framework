@@ -1,5 +1,6 @@
 import os
 import subprocess
+import threading
 from distutils import spawn
 
 import exc
@@ -43,6 +44,11 @@ class OutputAction:
 
 for action_str in ['PRINT', 'DISCARD', 'RETURN']:
     setattr(OutputAction, action_str, OutputAction(action_str))
+
+
+class WatchdogException(Exception):
+    """Raised when a process times out."""
+    pass
 
 
 # Exceptions
@@ -100,11 +106,12 @@ def find_executable(executable, path=None):
     return exe_path
 
 
-def call(args, output_action=OutputAction.RETURN):
+def call(args, output_action=OutputAction.RETURN, timeout=None):
     """Call process and return its exit code and output.
 
     :param list args : Process arguments.
     :param proc.OutputAction output_action : PRINT, DISCARD or RETURN.
+    :param float timeout : Timeout (s).
     :rtype : CallResult
     :return Call result object. stdout and stderr attributes are only populated
         if output_action == OutputAction.RETURN.
@@ -114,22 +121,36 @@ def call(args, output_action=OutputAction.RETURN):
     out = None
     err = None
     process = None
+    event = None
 
     try:
         if output_action == OutputAction.DISCARD:
             with open(os.devnull, 'w') as null_file:
                 process = subprocess.Popen(args, stdout=null_file, stderr=null_file)
-                process.wait()
         elif output_action == OutputAction.RETURN:
             process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1)
+        else:
+            process = subprocess.Popen(args)
+
+        if timeout is not None:
+            event = __watchdog(process, timeout)
+
+        if output_action == OutputAction.RETURN:
             out, err = process.communicate()
             out = out.strip()
             err = err.strip()
         else:
-            process = subprocess.Popen(args)
             process.wait()
     except Exception as e:
         exc.re_raise_new_message(e, 'Failed to call process: {}'.format(args[0]))
+    finally:
+        if event:
+            if event.is_set():
+                # Timeout occurred
+                raise WatchdogException
+            else:
+                # Process completed successfully, stop the watchdog
+                event.set()
 
     return CallResult(args[0], process.returncode, out, err)
 
@@ -193,3 +214,35 @@ def pkill(pattern, signal=None, match_arguments=True):
     exit_code = call(args, OutputAction.DISCARD).exit_code
 
     return exit_code == 0
+
+
+# Private functions
+
+
+def __watchdog(process, timeout):
+    """Kills process after a certain timeout.
+
+    :param subprocess.Popen process : Process to kill.
+    :param float timeout : Timeout (s).
+
+    :rtype : threading.Event
+    :return Event that should be set by the caller when the process has finished running.
+    """
+    event = threading.Event()
+    watchdog_thread = threading.Thread(target=__kill, args=[process, event, timeout])
+    watchdog_thread.start()
+    return event
+
+
+def __kill(process, event, timeout):
+    """Watchdog thread function.
+
+    :param subprocess.Popen process : Process to kill.
+    :param threading.Event event : Shared event.
+    :param float timeout : Timeout (s).
+    """
+    event.wait(timeout)
+
+    if not event.is_set():
+        process.kill()
+        event.set()

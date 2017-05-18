@@ -28,11 +28,12 @@ class OWLReasoner(object):
         self._path = path
 
     @abstractmethod
-    def classify(self, input_file, output_file=None):
+    def classify(self, input_file, output_file=None, timeout=None):
         """Performs the classification reasoning task.
 
         :param str input_file : Path of the input ontology.
         :param str output_file : Path of the output file.
+        :param float timeout : Timeout (s).
         :rtype : Stats
         :return : Stats for the classification task.
         """

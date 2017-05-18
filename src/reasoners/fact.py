@@ -29,7 +29,7 @@ class Fact(OWLReasoner):
     def supported_syntaxes(self):
         return [OWLSyntax.RDFXML, OWLSyntax.FUNCTIONAL]
 
-    def classify(self, input_file, output_file=None):
+    def classify(self, input_file, output_file=None, timeout=None):
         exc.raise_if_not_found(input_file, file_type='file')
 
         args = ['classify']
@@ -47,7 +47,8 @@ class Fact(OWLReasoner):
         call_result = jar.call(self._path,
                                args=args,
                                vm_opts=[lib_opt, limit_opt],
-                               output_action=proc.OutputAction.RETURN)
+                               output_action=proc.OutputAction.RETURN,
+                               timeout=timeout)
 
         if output_file:
             args = ['print-tbox', '-o', output_file, classification_out]

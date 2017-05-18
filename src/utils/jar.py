@@ -2,13 +2,14 @@ import exc
 import proc
 
 
-def call(jar, args=None, vm_opts=None, output_action=proc.OutputAction.RETURN):
+def call(jar, args=None, vm_opts=None, output_action=proc.OutputAction.RETURN, timeout=None):
     """Executes a jar and returns its exit code and output.
 
     :param str jar : Path to the jar.
     :param list[str] args : Jar arguments.
     :param list[str] vm_opts : Java VM options.
     :param proc.OutputAction output_action : What to do with the output.
+    :param float timeout : Timeout (s).
     :rtype : proc.CallResult
     :return Call result object.
     """
@@ -24,4 +25,4 @@ def call(jar, args=None, vm_opts=None, output_action=proc.OutputAction.RETURN):
     if args:
         java_args.extend(args)
 
-    return proc.call(java_args, output_action=output_action)
+    return proc.call(java_args, output_action=output_action, timeout=timeout)
