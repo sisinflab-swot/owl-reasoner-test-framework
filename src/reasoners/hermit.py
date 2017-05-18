@@ -10,14 +10,16 @@ class HermiT(OWLReasoner):
 
     # Public methods
 
-    def __init__(self, path, owl_tool_path):
+    def __init__(self, path, owl_tool_path, vm_opts):
         """
         :param str path : Path of the HermiT jar.
         :param str owl_tool_path : Path of the owltool jar.
+        :param list[str] vm_opts : Options for the Java VM.
         """
         super(HermiT, self).__init__(path)
         exc.raise_if_not_found(owl_tool_path, file_type='file')
         self.__owl_tool_path = owl_tool_path
+        self.__vm_opts = vm_opts
 
     # Overrides
 
@@ -43,11 +45,18 @@ class HermiT(OWLReasoner):
 
         args.append(input_file)
 
-        call_result = jar.call(self._path, args=args, output_action=proc.OutputAction.RETURN, timeout=timeout)
+        call_result = jar.call(self._path,
+                               args=args,
+                               vm_opts=self.__vm_opts,
+                               output_action=proc.OutputAction.RETURN,
+                               timeout=timeout)
 
         if output_file:
             args = ['print-tbox', '-o', output_file, classification_out]
-            jar.call(self.__owl_tool_path, args=args, output_action=proc.OutputAction.DISCARD)
+            jar.call(self.__owl_tool_path,
+                     args=args,
+                     vm_opts=self.__vm_opts,
+                     output_action=proc.OutputAction.DISCARD)
 
         return self.__extract_stats(call_result.stdout, call_result.stderr)
 

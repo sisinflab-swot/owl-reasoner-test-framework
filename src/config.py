@@ -1,11 +1,10 @@
 import sys
 from os import path
 
-from reasoners.fact import Fact
+from reasoners.owl import OWLReasonerJavaWrapper
 from reasoners.hermit import HermiT
 from reasoners.konclude import Konclude
 from reasoners.minime import MiniME
-from reasoners.trowl import TrOWL
 
 
 debug = True
@@ -22,7 +21,8 @@ class Paths(object):
     XML_DIR = path.join(DATA_DIR, 'rdfxml')
     TEMP_DIR = path.join(WRK_DIR, 'temp')
 
-    FACT = path.join(BIN_DIR, 'Fact++', 'factcli.jar')
+    FACT_DIR = path.join(BIN_DIR, 'Fact++')
+    FACT = path.join(FACT_DIR, 'factcli.jar')
     HERMIT = path.join(BIN_DIR, 'HermiT', 'HermiT.jar')
     KONCLUDE = path.join(BIN_DIR, 'Konclude', 'Binaries', 'Konclude')
     MINIME = path.join(BIN_DIR, 'MiniME', 'MiniME-cli')
@@ -35,13 +35,28 @@ class Paths(object):
 
 class Reasoners(object):
     """Reasoners config namespace."""
-    fact = Fact(Paths.FACT, Paths.OWLTOOL)
-    hermit = HermiT(Paths.HERMIT, Paths.OWLTOOL)
-    konclude = Konclude(Paths.KONCLUDE, Paths.OWLTOOL)
-    miniME = MiniME(Paths.MINIME)
-    trowl = TrOWL(Paths.TROWL, Paths.OWLTOOL)
+    classification_timeout = 300.0
+    common_vm_opts = ['-Xmx16g', '-DentityExpansionLimit=1000000000']
+
+    fact = OWLReasonerJavaWrapper(name='Fact++',
+                                  path=Paths.FACT,
+                                  owl_tool_path=Paths.OWLTOOL,
+                                  vm_opts=common_vm_opts + ['-Djava.library.path={}'.format(Paths.FACT_DIR)])
+
+    hermit = HermiT(path=Paths.HERMIT,
+                    owl_tool_path=Paths.OWLTOOL,
+                    vm_opts=common_vm_opts)
+
+    konclude = Konclude(path=Paths.KONCLUDE,
+                        owl_tool_path=Paths.OWLTOOL,
+                        vm_opts=common_vm_opts)
+
+    miniME = MiniME(path=Paths.MINIME)
+
+    trowl = OWLReasonerJavaWrapper(name='TrOWL',
+                                   path=Paths.TROWL,
+                                   owl_tool_path=Paths.OWLTOOL,
+                                   vm_opts=common_vm_opts)
 
     reference = konclude
-    all = [miniME, fact, hermit, konclude, trowl]
-
-    classification_timeout = 300.0
+    all = [fact, hermit, konclude, miniME, trowl]
