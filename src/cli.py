@@ -2,6 +2,7 @@ import argparse
 
 import config
 from tests.classification import ClassificationCorrectnessTest, ClassificationTimeTest
+from tests.consistency import ConsistencyCorrectnessTest, ConsistencyTimeTest
 
 
 class TestModes(object):
@@ -20,6 +21,15 @@ def classification_sub(args):
     {
         TestModes.CORRECTNESS: ClassificationCorrectnessTest(),
         TestModes.TIME: ClassificationTimeTest()
+    }[args.mode].start()
+    return 0
+
+
+def consistency_sub(args):
+    """:rtype : int"""
+    {
+        TestModes.CORRECTNESS: ConsistencyCorrectnessTest(),
+        TestModes.TIME: ConsistencyTimeTest()
     }[args.mode].start()
     return 0
 
@@ -69,6 +79,16 @@ def build_parser():
                                                   add_help=False)
 
     parser_classification.set_defaults(func=classification_sub)
+
+    # Consistency subcommand
+    desc = 'Perform the consistency test.'
+    parser_classification = subparsers.add_parser('consistency',
+                                                  description=desc,
+                                                  help=desc,
+                                                  parents=[help_parser, mode_parser],
+                                                  add_help=False)
+
+    parser_classification.set_defaults(func=consistency_sub)
 
     return main_parser
 

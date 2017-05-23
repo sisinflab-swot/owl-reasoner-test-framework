@@ -1,7 +1,7 @@
 import re
 import os
 
-from owl import OWLReasoner, OWLSyntax, Stats
+from owl import ConsistencyResults, OWLReasoner, OWLSyntax, ReasoningStats
 from src.utils import exc, jar, proc
 
 
@@ -52,7 +52,15 @@ class Konclude(OWLReasoner):
                      vm_opts=self.__vm_opts,
                      output_action=proc.OutputAction.DISCARD)
 
-        return self.__extract_stats(call_result.stdout, call_result.stderr)
+        return self.__extract_classification_stats(call_result.stdout, call_result.stderr)
+
+    def consistency(self, input_file, timeout=None):
+        exc.raise_if_not_found(input_file, file_type='file')
+
+        args = [self._path, 'consistency', '-i', input_file, '-v']
+        call_result = proc.call(args, output_action=proc.OutputAction.RETURN, timeout=timeout)
+
+        return self.__extract_consistency_results(call_result.stdout, call_result.stderr)
 
     # Private methods
 
@@ -66,17 +74,46 @@ class Konclude(OWLReasoner):
         """
         exc.raise_if_falsy(stdout=stdout)
 
-        result = re.search(r'>> Ontology parsed in (.*) ms.', stdout)
+        result = re.search(r'>> Ontology parsed in (.*) ms\.', stdout)
         exc.raise_if_falsy(result=result)
-
         parsing_ms = float(result.group(1))
 
-        reasoning_ms = 0.0
+        result = re.search(r'Total processing time: (.*) ms\.', stdout)
+        exc.raise_if_falsy(result=result)
+        total_ms = float(result.group(1))
 
-        for task in ['preprocessing', 'precomputing', 'classification']:
-            result = re.search(r'>> Finished {} in (.*) ms'.format(task), stdout)
-            exc.raise_if_falsy(result=result)
+        return ReasoningStats(parsing_ms=parsing_ms, reasoning_ms=(total_ms - parsing_ms), error=stderr)
 
-            reasoning_ms += float(result.group(1))
+    def __extract_classification_stats(self, stdout, stderr):
+        """Extract stats for the classification task by parsing stdout and stderr.
 
-        return Stats(parsing_ms=parsing_ms, reasoning_ms=reasoning_ms, error=stderr)
+        :param str stdout : stdout.
+        :param str stderr : stderr.
+        :rtype : Stats
+        :return : Reasoning task stats.
+        """
+        stats = self.__extract_stats(stdout, stderr)
+
+        result = re.search(r'Query \'UnnamedWriteClassHierarchyQuery\' processed in \'(.*)\' ms\.', stdout)
+
+        if result:
+            write_ms = float(result.group(1))
+            stats.reasoning_ms -= write_ms
+
+        return stats
+
+    def __extract_consistency_results(self, stdout, stderr):
+        """Extract the result of the consistency task by parsing stdout and stderr.
+
+        :param str stdout : stdout.
+        :param str stderr : stderr.
+        :rtype : ConsistencyResults
+        :return : Consistency task results.
+        """
+        stats = self.__extract_stats(stdout, stderr)
+
+        result = re.search(r'Ontology \'.*\' is (.*)\.', stdout)
+        exc.raise_if_falsy(result=result)
+        consistent = (result.group(1) == 'consistent')
+
+        return ConsistencyResults(consistent, stats)
