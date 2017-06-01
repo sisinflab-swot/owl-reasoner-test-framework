@@ -19,8 +19,8 @@ class TestModes(object):
 def classification_sub(args):
     """:rtype : int"""
     {
-        TestModes.CORRECTNESS: ClassificationCorrectnessTest(),
-        TestModes.TIME: ClassificationTimeTest()
+        TestModes.CORRECTNESS: ClassificationCorrectnessTest(args.datasets),
+        TestModes.TIME: ClassificationTimeTest(args.datasets)
     }[args.mode].start()
     return 0
 
@@ -28,8 +28,8 @@ def classification_sub(args):
 def consistency_sub(args):
     """:rtype : int"""
     {
-        TestModes.CORRECTNESS: ConsistencyCorrectnessTest(),
-        TestModes.TIME: ConsistencyTimeTest()
+        TestModes.CORRECTNESS: ConsistencyCorrectnessTest(args.datasets),
+        TestModes.TIME: ConsistencyTimeTest(args.datasets)
     }[args.mode].start()
     return 0
 
@@ -53,6 +53,14 @@ def build_parser():
                        help='Show this help message and exit.',
                        action='help')
 
+    # Dataset parser
+    dataset_parser = argparse.ArgumentParser(add_help=False)
+
+    group = dataset_parser.add_argument_group('Datasets')
+    group.add_argument('-d', '--datasets',
+                       nargs='+',
+                       help='Desired datasets.')
+
     # Mode parser
     mode_parser = argparse.ArgumentParser(add_help=False)
 
@@ -75,7 +83,7 @@ def build_parser():
     parser_classification = subparsers.add_parser('classification',
                                                   description=desc,
                                                   help=desc,
-                                                  parents=[help_parser, mode_parser],
+                                                  parents=[help_parser, mode_parser, dataset_parser],
                                                   add_help=False)
 
     parser_classification.set_defaults(func=classification_sub)
@@ -85,7 +93,7 @@ def build_parser():
     parser_classification = subparsers.add_parser('consistency',
                                                   description=desc,
                                                   help=desc,
-                                                  parents=[help_parser, mode_parser],
+                                                  parents=[help_parser, mode_parser, dataset_parser],
                                                   add_help=False)
 
     parser_classification.set_defaults(func=consistency_sub)

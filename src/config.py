@@ -6,7 +6,7 @@ from reasoners.konclude import Konclude
 from reasoners.minime import MiniME
 
 
-debug = True
+debug = False
 
 
 class Paths(object):
@@ -15,9 +15,6 @@ class Paths(object):
     BIN_DIR = path.join(DIR, 'bin')
     DATA_DIR = path.join(DIR, 'data')
     WRK_DIR = path.join(DIR, 'wrk')
-
-    FUNC_DIR = path.join(DATA_DIR, 'functional')
-    XML_DIR = path.join(DATA_DIR, 'rdfxml')
     TEMP_DIR = path.join(WRK_DIR, 'temp')
 
     FACT_DIR = path.join(BIN_DIR, 'Fact++')

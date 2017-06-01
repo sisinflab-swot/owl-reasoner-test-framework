@@ -15,10 +15,6 @@ class ClassificationCorrectnessTest(Test):
     def name(self):
         return 'classification correctness'
 
-    def __init__(self):
-        self.reference_out = os.path.join(config.Paths.TEMP_DIR, 'reference.txt')
-        self.minime_out = os.path.join(config.Paths.TEMP_DIR, 'minime.txt')
-
     def setup(self, logger, csv_writer):
         del logger  # Unused
         csv_writer.writerow(['Ontology', 'Result', 'Failure reason'])
@@ -30,24 +26,27 @@ class ClassificationCorrectnessTest(Test):
         reference = config.Reasoners.reference
         minime = config.Reasoners.miniME
 
+        reference_out = os.path.join(config.Paths.TEMP_DIR, 'reference.txt')
+        minime_out = os.path.join(config.Paths.TEMP_DIR, 'minime.txt')
+
         func_ontology = next(onto for onto in ontologies if onto.syntax == OWLSyntax.FUNCTIONAL)
         xml_ontology = next(onto for onto in ontologies if onto.syntax == OWLSyntax.RDFXML)
 
         # Classify
         logger.log('{}: '.format(minime.name), endl=False)
-        minime_stats = minime.classify(xml_ontology.path, output_file=self.minime_out)
+        minime_stats = minime.classify(xml_ontology.path, output_file=minime_out)
         logger.log('Parsing {:.0f} ms | Classification {:.0f} ms'.format(minime_stats.parsing_ms,
                                                                          minime_stats.reasoning_ms))
 
         logger.log('{}: '.format(reference.name), endl=False)
-        ref_stats = reference.classify(func_ontology.path, output_file=self.reference_out)
+        ref_stats = reference.classify(func_ontology.path, output_file=reference_out)
         logger.log('Parsing {:.0f} ms | Classification {:.0f} ms'.format(ref_stats.parsing_ms,
                                                                          ref_stats.reasoning_ms))
 
         # Results
         logger.log('Result: ', endl=False)
 
-        if filecmp.cmp(self.reference_out, self.minime_out, shallow=False):
+        if filecmp.cmp(reference_out, minime_out, shallow=False):
             logger.log('success', color=echo.Color.GREEN)
             csv_writer.writerow([onto_name, 'success'])
         else:
