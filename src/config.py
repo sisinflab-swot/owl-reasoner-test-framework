@@ -22,6 +22,7 @@ class Paths(object):
     HERMIT = path.join(BIN_DIR, 'HermiT', 'hermitcli.jar')
     KONCLUDE = path.join(BIN_DIR, 'Konclude', 'Binaries', 'Konclude')
     MINIME = path.join(BIN_DIR, 'MiniME', 'MiniME-cli')
+    MINIME_JAVA = path.join(BIN_DIR, 'MiniMEJava', 'minimecli.jar')
     OWLTOOL = path.join(BIN_DIR, 'OwlTool', 'owltool.jar')
     TROWL = path.join(BIN_DIR, 'TrOWL', 'trowlcli.jar')
 
@@ -50,10 +51,15 @@ class Reasoners(object):
 
     miniME = MiniME(path=Paths.MINIME)
 
+    miniMEJava = JavaReasoner(name='MiniME Java',
+                              path=Paths.MINIME_JAVA,
+                              owl_tool_path=Paths.OWLTOOL,
+                              vm_opts=common_vm_opts)
+
     trowl = JavaReasoner(name='TrOWL',
                          path=Paths.TROWL,
                          owl_tool_path=Paths.OWLTOOL,
                          vm_opts=common_vm_opts)
 
     reference = konclude
-    all = [fact, hermit, konclude, miniME, trowl]
+    all = [fact, hermit, konclude, miniME, miniMEJava, trowl]
