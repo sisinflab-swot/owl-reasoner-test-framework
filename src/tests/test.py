@@ -22,7 +22,7 @@ class Test(object):
         """Runs test over a single ontology.
 
         :param str onto_name : File name of the ontology.
-        :param list[OWLOntology] ontologies : Ontologies in different syntaxes.
+        :param dict[str, OWLOntology] ontologies : Ontologies by syntax.
         :param Logger logger : Logger instance.
         :param csv.writer csv_writer : CSV writer instance.
         """
@@ -85,8 +85,12 @@ class Test(object):
                     func_ontology = OWLOntology(path.join(func_dir, onto_name), OWLSyntax.FUNCTIONAL)
                     xml_ontology = OWLOntology(path.join(xml_dir, onto_name), OWLSyntax.RDFXML)
 
-                    ontologies = [func_ontology, xml_ontology]
-                    size_str = ' | '.join(['{}: {}'.format(o.syntax, o.readable_size) for o in ontologies])
+                    ontologies = {
+                        OWLSyntax.FUNCTIONAL: func_ontology,
+                        OWLSyntax.RDFXML: xml_ontology
+                    }
+
+                    size_str = ' | '.join(['{}: {}'.format(o.syntax, o.readable_size) for o in ontologies.values()])
 
                     logger.log('{}'.format(onto_name), color=echo.Color.YELLOW, endl=False)
                     logger.log(' ({})'.format(size_str))

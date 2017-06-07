@@ -21,8 +21,8 @@ class ConsistencyCorrectnessTest(Test):
         reference = config.Reasoners.reference
         minime = config.Reasoners.miniME
 
-        func_ontology = next(onto for onto in ontologies if onto.syntax == OWLSyntax.FUNCTIONAL)
-        xml_ontology = next(onto for onto in ontologies if onto.syntax == OWLSyntax.RDFXML)
+        xml_ontology = ontologies[OWLSyntax.RDFXML]
+        func_ontology = ontologies[OWLSyntax.FUNCTIONAL]
 
         # Check consistency
         logger.log('{}: '.format(minime.name), endl=False)
@@ -79,23 +79,22 @@ class ConsistencyTimeTest(Test):
         for reasoner in config.Reasoners.all:
             logger.log('- {}:'.format(reasoner.name))
 
-            for ontology in ontologies:
-                if ontology.syntax not in reasoner.supported_syntaxes:
-                    continue
+            for syntax in reasoner.supported_syntaxes:
+                ontology = ontologies[syntax]
 
                 try:
                     results = reasoner.consistency(ontology.path, timeout=config.Reasoners.classification_timeout)
                 except WatchdogException:
                     csv_row.extend(['timeout', 'timeout'])
-                    logger.log('    {}: timeout'.format(ontology.syntax))
+                    logger.log('    {}: timeout'.format(syntax))
                 except Exception:
                     csv_row.extend(['error', 'error'])
-                    logger.log('    {}: error'.format(ontology.syntax))
+                    logger.log('    {}: error'.format(syntax))
                 else:
                     stats = results.stats
                     csv_row.extend([stats.parsing_ms, stats.reasoning_ms])
-                    logger.log('    {}: Parsing {:.0f} ms | Classification {:.0f} ms'.format(ontology.syntax,
-                                                                                             stats.parsing_ms,
-                                                                                             stats.reasoning_ms))
+                    logger.log('    {}: Parsing {:.0f} ms | Consistency {:.0f} ms'.format(syntax,
+                                                                                          stats.parsing_ms,
+                                                                                          stats.reasoning_ms))
 
         csv_writer.writerow(csv_row)
