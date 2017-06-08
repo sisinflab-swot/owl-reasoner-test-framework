@@ -1,6 +1,6 @@
 import re
 
-from owl import ConsistencyResults, OWLReasoner, OWLSyntax, ReasoningStats
+from owl import AbductionContractionResults, ConsistencyResults, OWLReasoner, OWLSyntax, ReasoningStats
 from src.utils import exc, proc
 
 
@@ -36,6 +36,15 @@ class MiniME(OWLReasoner):
         call_result = proc.call(args, output_action=proc.OutputAction.RETURN, timeout=timeout)
 
         return extract_consistency_results(call_result.stdout, call_result.stderr)
+
+    def abduction_contraction(self, resource_file, request_file, timeout=None):
+        exc.raise_if_not_found(resource_file, file_type='file')
+        exc.raise_if_not_found(request_file, file_type='file')
+
+        args = [self._path, 'abduction-contraction', '-i', resource_file, '-r', request_file]
+        call_result = proc.call(args, output_action=proc.OutputAction.RETURN, timeout=timeout)
+
+        return extract_abduction_contraction_results(call_result.stdout, call_result.stderr)
 
 
 # Utility functions
@@ -77,3 +86,36 @@ def extract_consistency_results(stdout, stderr):
     consistent = (result.group(1) == 'consistent')
 
     return ConsistencyResults(consistent, stats)
+
+
+def extract_abduction_contraction_results(stdout, stderr):
+    """Extract the result of the consistency task by parsing stdout and stderr.
+
+    :param str stdout : stdout.
+    :param str stderr : stderr.
+    :rtype : AbductionContractionResults
+    :return : Abduction/contraction task results.
+    """
+    exc.raise_if_falsy(stdout=stdout)
+
+    result = re.search(r'Resource parsing: (.*) ms', stdout)
+    exc.raise_if_falsy(result=result)
+    res_parsing_ms = float(result.group(1))
+
+    result = re.search(r'Request parsing: (.*) ms', stdout)
+    exc.raise_if_falsy(result=result)
+    req_parsing_ms = float(result.group(1))
+
+    result = re.search(r'Reasoner initialization: (.*) ms', stdout)
+    exc.raise_if_falsy(result=result)
+    init_ms = float(result.group(1))
+
+    result = re.search(r'Reasoning: (.*) ms', stdout)
+    exc.raise_if_falsy(result=result)
+    reasoning_ms = float(result.group(1))
+
+    return AbductionContractionResults(resource_parsing_ms=res_parsing_ms,
+                                       request_parsing_ms=req_parsing_ms,
+                                       init_ms=init_ms,
+                                       reasoning_ms=reasoning_ms,
+                                       error=stderr)

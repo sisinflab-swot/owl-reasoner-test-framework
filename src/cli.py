@@ -1,6 +1,7 @@
 import argparse
 
 import config
+from tests.abduction_contraction import AbductionContractionTimeTest
 from tests.classification import ClassificationCorrectnessTest, ClassificationTimeTest
 from tests.consistency import ConsistencyCorrectnessTest, ConsistencyTimeTest
 
@@ -14,6 +15,13 @@ class TestModes(object):
 
 
 # Subcommands
+
+
+def abduction_contraction_sub(args):
+    """:rtype : int"""
+    del args  # Unused
+    AbductionContractionTimeTest(['sisinflab']).start()
+    return 0
 
 
 def classification_sub(args):
@@ -90,13 +98,23 @@ def build_parser():
 
     # Consistency subcommand
     desc = 'Perform the consistency test.'
-    parser_classification = subparsers.add_parser('consistency',
-                                                  description=desc,
-                                                  help=desc,
-                                                  parents=[help_parser, mode_parser, dataset_parser],
-                                                  add_help=False)
+    parser_consistency = subparsers.add_parser('consistency',
+                                               description=desc,
+                                               help=desc,
+                                               parents=[help_parser, mode_parser, dataset_parser],
+                                               add_help=False)
 
-    parser_classification.set_defaults(func=consistency_sub)
+    parser_consistency.set_defaults(func=consistency_sub)
+
+    # Abduction/contraction subcommand
+    desc = 'Perform the abduction/contraction test.'
+    parser_abduction_contraction = subparsers.add_parser('abduction-contraction',
+                                                         description=desc,
+                                                         help=desc,
+                                                         parents=[help_parser],
+                                                         add_help=False)
+
+    parser_abduction_contraction.set_defaults(func=abduction_contraction_sub)
 
     return main_parser
 

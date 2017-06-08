@@ -33,6 +33,9 @@ class Paths(object):
 class Reasoners(object):
     """Reasoners config namespace."""
     classification_timeout = 300.0
+    consistency_timeout = 120.0
+    abduction_contraction_timeout = 60.0
+
     common_vm_opts = ['-Xmx16g', '-DentityExpansionLimit=1000000000']
 
     fact = JavaReasoner(name='Fact++',
@@ -63,3 +66,4 @@ class Reasoners(object):
 
     reference = konclude
     all = [fact, hermit, konclude, miniME, miniMEJava, trowl]
+    non_standard = [miniME, miniMEJava]

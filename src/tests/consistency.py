@@ -83,7 +83,7 @@ class ConsistencyTimeTest(Test):
                 ontology = ontologies[syntax]
 
                 try:
-                    results = reasoner.consistency(ontology.path, timeout=config.Reasoners.classification_timeout)
+                    results = reasoner.consistency(ontology.path, timeout=config.Reasoners.consistency_timeout)
                 except WatchdogException:
                     csv_row.extend(['timeout', 'timeout'])
                     logger.log('    {}: timeout'.format(syntax))

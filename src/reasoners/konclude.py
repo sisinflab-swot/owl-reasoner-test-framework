@@ -62,6 +62,9 @@ class Konclude(OWLReasoner):
 
         return self.__extract_consistency_results(call_result.stdout, call_result.stderr)
 
+    def abduction_contraction(self, resource_file, request_file, timeout=None):
+        raise NotImplementedError
+
     # Private methods
 
     def __extract_stats(self, stdout, stderr):

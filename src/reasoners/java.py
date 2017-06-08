@@ -72,3 +72,16 @@ class JavaReasoner(OWLReasoner):
                                timeout=timeout)
 
         return minime.extract_consistency_results(call_result.stdout, call_result.stderr)
+
+    def abduction_contraction(self, resource_file, request_file, timeout=None):
+        exc.raise_if_not_found(resource_file, file_type='file')
+        exc.raise_if_not_found(request_file, file_type='file')
+
+        args = ['abduction-contraction', '-r', request_file, resource_file]
+        call_result = jar.call(self._path,
+                               args=args,
+                               vm_opts=self.__vm_opts,
+                               output_action=proc.OutputAction.RETURN,
+                               timeout=timeout)
+
+        return minime.extract_abduction_contraction_results(call_result.stdout, call_result.stderr)

@@ -95,6 +95,13 @@ class Test(object):
                     logger.log('{}'.format(onto_name), color=echo.Color.YELLOW, endl=False)
                     logger.log(' ({})'.format(size_str))
 
-                    self.run(onto_name, ontologies, logger, csv_writer)
+                    try:
+                        self.run(onto_name, ontologies, logger, csv_writer)
+                    except Exception as e:
+                        if config.debug:
+                            raise e
+                        else:
+                            err_msg = e.message if e.message else str(e)
+                            echo.error(err_msg)
 
                     logger.log('')

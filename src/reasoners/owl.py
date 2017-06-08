@@ -37,7 +37,7 @@ class OWLReasoner(object):
         :rtype : Stats
         :return : Stats for the classification task.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def consistency(self, input_file, timeout=None):
@@ -45,10 +45,23 @@ class OWLReasoner(object):
 
         :param str input_file : Path of the input ontology.
         :param float timeout : Timeout (s).
+        :param float timeout : Timeout (s).
         :rtype : ConsistencyResults
         :return Results for the consistency task.
         """
-        pass
+        raise NotImplementedError
+
+    @abstractmethod
+    def abduction_contraction(self, resource_file, request_file, timeout=None):
+        """Performs abductions or contractions between all resource and request individuals.
+
+        :param str resource_file : Path of the resource ontology.
+        :param str request_file : Path of the request ontology.
+        :param float timeout : Timeout (s).
+        :rtype : AbductionContractionResults
+        :return : Results for the reasoning task.
+        """
+        raise NotImplementedError
 
 
 class OWLOntology(object):
@@ -103,3 +116,21 @@ class ConsistencyResults(object):
         """
         self.consistent = consistent
         self.stats = stats
+
+
+class AbductionContractionResults(object):
+    """Contains results for the abduction-contraction task."""
+
+    def __init__(self, resource_parsing_ms=0.0, request_parsing_ms=0.0, init_ms=0.0, reasoning_ms=0.0, error=None):
+        """
+        :param float resource_parsing_ms : Resource parsing time in ms.
+        :param float request_parsing_ms : Request parsing time in ms.
+        :param float init_ms : Reasoner init time in ms.
+        :param float reasoning_ms : Reasoning time in ms.
+        :param str error : Error message.
+        """
+        self.resource_parsing_ms = resource_parsing_ms
+        self.request_parsing_ms = request_parsing_ms
+        self.init_ms = init_ms
+        self.reasoning_ms = reasoning_ms
+        self.error = error
