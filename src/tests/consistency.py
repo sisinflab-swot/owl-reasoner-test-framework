@@ -1,5 +1,4 @@
 from src import config
-from src.reasoners.owl import OWLSyntax
 from src.utils import echo
 from src.utils.proc import WatchdogException
 from test import Test
@@ -14,40 +13,37 @@ class ConsistencyCorrectnessTest(Test):
 
     def setup(self, logger, csv_writer):
         del logger  # Unused
-        csv_writer.writerow(['Ontology', config.Reasoners.miniME.name, config.Reasoners.reference.name, 'Result'])
+        csv_header = ['Ontology']
+        csv_header.extend([r.name for r in self._reasoners])
+        csv_writer.writerow(csv_header)
 
     def run(self, onto_name, ontologies, logger, csv_writer):
 
-        reference = config.Reasoners.reference
-        minime = config.Reasoners.miniME
-
-        xml_ontology = ontologies[OWLSyntax.RDFXML]
-        func_ontology = ontologies[OWLSyntax.FUNCTIONAL]
+        csv_row = [onto_name]
 
         # Check consistency
-        logger.log('{}: '.format(minime.name), endl=False)
-        minime_results = minime.consistency(xml_ontology.path)
-        logger.log('Parsing {:.0f} ms | Consistency {:.0f} ms'.format(minime_results.stats.parsing_ms,
-                                                                      minime_results.stats.reasoning_ms))
+        for reasoner in self._reasoners:
+            logger.log('    {}: '.format(reasoner.name), endl=False)
 
-        logger.log('{}: '.format(reference.name), endl=False)
-        ref_results = reference.consistency(func_ontology.path)
-        logger.log('Parsing {:.0f} ms | Consistency {:.0f} ms'.format(ref_results.stats.parsing_ms,
-                                                                      ref_results.stats.reasoning_ms))
+            try:
+                reasoner_results = reasoner.consistency(ontologies[reasoner.preferred_syntax].path,
+                                                        timeout=config.Reasoners.consistency_timeout)
+            except WatchdogException:
+                result = 'timeout'
+                color = echo.Color.RED
+            except Exception:
+                result = 'error'
+                color = echo.Color.RED
+            else:
+                if reasoner_results.consistent:
+                    result = 'consistent'
+                    color = echo.Color.GREEN
+                else:
+                    result = 'inconsistent'
+                    color = echo.Color.RED
 
-        # Results
-        minime_consistent = 'consistent' if minime_results.consistent else 'inconsistent'
-        ref_consistent = 'consistent' if ref_results.consistent else 'inconsistent'
-
-        logger.log('Result: {} | '.format(minime_consistent), endl=False)
-        csv_row = [onto_name, minime_consistent, ref_consistent]
-
-        if minime_results.consistent == ref_results.consistent:
-            logger.log('success', color=echo.Color.GREEN)
-            csv_row.append('success')
-        else:
-            logger.log('failure', color=echo.Color.RED)
-            csv_row.append('failure')
+            logger.log(result, color=color)
+            csv_row.append(result)
 
         csv_writer.writerow(csv_row)
 
@@ -84,7 +80,8 @@ class ConsistencyTimeTest(Test):
                 ontology = ontologies[syntax]
 
                 try:
-                    results = reasoner.consistency(ontology.path, timeout=config.Reasoners.consistency_timeout)
+                    results = reasoner.consistency(ontology.path,
+                                                   timeout=config.Reasoners.consistency_timeout)
                 except WatchdogException:
                     csv_row.extend(['timeout', 'timeout'])
                     logger.log('    {}: timeout'.format(syntax))

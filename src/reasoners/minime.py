@@ -1,7 +1,7 @@
 import re
 
 from owl import AbductionContractionResults, ConsistencyResults, OWLReasoner, OWLSyntax, ReasoningStats
-from src.utils import exc, proc
+from src.utils import exc, fileutils, proc
 
 
 class MiniME(OWLReasoner):
@@ -27,6 +27,7 @@ class MiniME(OWLReasoner):
         args = [self._path, 'classification', '-i', input_file]
 
         if output_file:
+            fileutils.remove(output_file)
             args.extend(['-o', output_file])
 
         call_result = proc.call(args, output_action=proc.OutputAction.RETURN, timeout=timeout)

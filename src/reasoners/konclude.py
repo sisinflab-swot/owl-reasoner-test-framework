@@ -2,7 +2,7 @@ import re
 import os
 
 from owl import ConsistencyResults, OWLReasoner, OWLSyntax, ReasoningStats
-from src.utils import exc, jar, proc
+from src.utils import exc, fileutils, jar, proc
 
 
 class Konclude(OWLReasoner):
@@ -43,6 +43,10 @@ class Konclude(OWLReasoner):
 
         if output_file:
             classification_out = os.path.splitext(output_file)[0] + '.owl'
+
+            fileutils.remove(output_file)
+            fileutils.remove(classification_out)
+
             args.extend(['-o', classification_out])
 
         args.append('-v')

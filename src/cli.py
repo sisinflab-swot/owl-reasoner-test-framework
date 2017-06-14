@@ -26,7 +26,7 @@ def abduction_contraction_sub(args):
 def classification_sub(args):
     """:rtype : int"""
     {
-        TestModes.CORRECTNESS: ClassificationCorrectnessTest(args.datasets),
+        TestModes.CORRECTNESS: ClassificationCorrectnessTest(args.datasets, args.reasoners),
         TestModes.TIME: ClassificationTimeTest(args.datasets, args.reasoners, args.all_syntaxes)
     }[args.mode].start()
     return 0
@@ -35,7 +35,7 @@ def classification_sub(args):
 def consistency_sub(args):
     """:rtype : int"""
     {
-        TestModes.CORRECTNESS: ConsistencyCorrectnessTest(args.datasets),
+        TestModes.CORRECTNESS: ConsistencyCorrectnessTest(args.datasets, args.reasoners),
         TestModes.TIME: ConsistencyTimeTest(args.datasets, args.reasoners, args.all_syntaxes)
     }[args.mode].start()
     return 0

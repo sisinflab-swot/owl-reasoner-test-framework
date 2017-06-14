@@ -2,7 +2,7 @@ import os
 
 import minime
 from owl import OWLReasoner, OWLSyntax
-from src.utils import exc, jar, proc
+from src.utils import exc, fileutils, jar, proc
 
 
 class JavaReasoner(OWLReasoner):
@@ -46,6 +46,10 @@ class JavaReasoner(OWLReasoner):
 
         if output_file:
             classification_out = os.path.splitext(output_file)[0] + '.owl'
+
+            fileutils.remove(output_file)
+            fileutils.remove(classification_out)
+
             args.extend(['-o', classification_out])
 
         args.append(input_file)
