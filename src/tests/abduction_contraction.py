@@ -15,9 +15,15 @@ class AbductionContractionTimeTest(Test):
 
     def setup(self, logger, csv_writer):
         del logger  # Unused
+
+        # Reasoners
+        if not self._reasoners:
+            self._reasoners = config.Reasoners.non_standard
+
+        # CSV header
         columns = ['Resource', 'Request']
 
-        for reasoner in config.Reasoners.non_standard:
+        for reasoner in self._reasoners:
             columns.append('{} resource parsing'.format(reasoner.name))
             columns.append('{} request parsing'.format(reasoner.name))
             columns.append('{} reasoner init'.format(reasoner.name))
@@ -43,7 +49,7 @@ class AbductionContractionTimeTest(Test):
             logger.log('    Request: {}'.format(request_name))
             csv_row = [onto_name, request_name]
 
-            for reasoner in config.Reasoners.non_standard:
+            for reasoner in self._reasoners:
                 logger.log('        {}: '.format(reasoner.name), endl=False)
                 try:
                     stats = reasoner.abduction_contraction(resource, request,

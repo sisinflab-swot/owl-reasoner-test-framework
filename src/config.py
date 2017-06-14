@@ -67,3 +67,5 @@ class Reasoners(object):
     reference = konclude
     all = [fact, hermit, konclude, miniME, miniMEJava, trowl]
     non_standard = [miniME, miniMEJava]
+
+    by_name = dict(zip([r.name for r in all], all))

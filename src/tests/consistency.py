@@ -64,7 +64,7 @@ class ConsistencyTimeTest(Test):
 
         columns = ['Ontology']
 
-        for reasoner in config.Reasoners.all:
+        for reasoner in self._reasoners:
             for syntax in reasoner.supported_syntaxes:
                 columns.append('{} {} parsing'.format(reasoner.name, syntax))
                 columns.append('{} {} consistency'.format(reasoner.name, syntax))
@@ -76,7 +76,7 @@ class ConsistencyTimeTest(Test):
 
         csv_row = [onto_name]
 
-        for reasoner in config.Reasoners.all:
+        for reasoner in self._reasoners:
             logger.log('- {}:'.format(reasoner.name))
 
             for syntax in reasoner.supported_syntaxes:

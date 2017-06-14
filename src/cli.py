@@ -19,8 +19,7 @@ class TestModes(object):
 
 def abduction_contraction_sub(args):
     """:rtype : int"""
-    del args  # Unused
-    AbductionContractionTimeTest(['sisinflab']).start()
+    AbductionContractionTimeTest(['sisinflab'], args.reasoners).start()
     return 0
 
 
@@ -28,7 +27,7 @@ def classification_sub(args):
     """:rtype : int"""
     {
         TestModes.CORRECTNESS: ClassificationCorrectnessTest(args.datasets),
-        TestModes.TIME: ClassificationTimeTest(args.datasets)
+        TestModes.TIME: ClassificationTimeTest(args.datasets, args.reasoners)
     }[args.mode].start()
     return 0
 
@@ -37,7 +36,7 @@ def consistency_sub(args):
     """:rtype : int"""
     {
         TestModes.CORRECTNESS: ConsistencyCorrectnessTest(args.datasets),
-        TestModes.TIME: ConsistencyTimeTest(args.datasets)
+        TestModes.TIME: ConsistencyTimeTest(args.datasets, args.reasoners)
     }[args.mode].start()
     return 0
 
@@ -69,6 +68,14 @@ def build_parser():
                        nargs='+',
                        help='Desired datasets.')
 
+    # Reasoners parser
+    reasoner_parser = argparse.ArgumentParser(add_help=False)
+
+    group = reasoner_parser.add_argument_group('Reasoners')
+    group.add_argument('-r', '--reasoners',
+                       nargs='+',
+                       help='Desired reasoners.')
+
     # Mode parser
     mode_parser = argparse.ArgumentParser(add_help=False)
 
@@ -91,7 +98,7 @@ def build_parser():
     parser_classification = subparsers.add_parser('classification',
                                                   description=desc,
                                                   help=desc,
-                                                  parents=[help_parser, mode_parser, dataset_parser],
+                                                  parents=[help_parser, mode_parser, dataset_parser, reasoner_parser],
                                                   add_help=False)
 
     parser_classification.set_defaults(func=classification_sub)
@@ -101,7 +108,7 @@ def build_parser():
     parser_consistency = subparsers.add_parser('consistency',
                                                description=desc,
                                                help=desc,
-                                               parents=[help_parser, mode_parser, dataset_parser],
+                                               parents=[help_parser, mode_parser, dataset_parser, reasoner_parser],
                                                add_help=False)
 
     parser_consistency.set_defaults(func=consistency_sub)
@@ -111,7 +118,7 @@ def build_parser():
     parser_abduction_contraction = subparsers.add_parser('abduction-contraction',
                                                          description=desc,
                                                          help=desc,
-                                                         parents=[help_parser],
+                                                         parents=[help_parser, reasoner_parser],
                                                          add_help=False)
 
     parser_abduction_contraction.set_defaults(func=abduction_contraction_sub)

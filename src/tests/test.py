@@ -37,11 +37,17 @@ class Test(object):
         """
         pass
 
-    def __init__(self, datasets=None):
+    def __init__(self, datasets=None, reasoners=None):
         """
-        :param list[str] datasets : If specified, limit the tests to these datasets.
+        :param list[str] datasets : If specified, limit the tests to the specified datasets.
+        :param list[str] reasoners : If specified, limit the tests to the specified reasoners.
         """
         self._datasets = datasets
+
+        if reasoners:
+            self._reasoners = [config.Reasoners.by_name[n] for n in reasoners]
+        else:
+            self._reasoners = config.Reasoners.all
 
     def start(self):
         """Starts the test."""
