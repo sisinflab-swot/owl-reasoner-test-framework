@@ -31,6 +31,10 @@ class Konclude(OWLReasoner):
     def supported_syntaxes(self):
         return [OWLSyntax.FUNCTIONAL]
 
+    @property
+    def preferred_syntax(self):
+        return OWLSyntax.FUNCTIONAL
+
     def classify(self, input_file, output_file=None, timeout=None):
         exc.raise_if_not_found(input_file, file_type='file')
 

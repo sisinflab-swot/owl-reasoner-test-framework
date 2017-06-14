@@ -37,12 +37,14 @@ class Test(object):
         """
         pass
 
-    def __init__(self, datasets=None, reasoners=None):
+    def __init__(self, datasets=None, reasoners=None, all_syntaxes=False):
         """
         :param list[str] datasets : If specified, limit the tests to the specified datasets.
         :param list[str] reasoners : If specified, limit the tests to the specified reasoners.
+        :param bool all_syntaxes : If true, the test is run on all supported syntaxes.
         """
         self._datasets = datasets
+        self._all_syntaxes = all_syntaxes
 
         if reasoners:
             self._reasoners = [config.Reasoners.by_name[n] for n in reasoners]

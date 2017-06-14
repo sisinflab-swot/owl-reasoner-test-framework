@@ -27,7 +27,7 @@ def classification_sub(args):
     """:rtype : int"""
     {
         TestModes.CORRECTNESS: ClassificationCorrectnessTest(args.datasets),
-        TestModes.TIME: ClassificationTimeTest(args.datasets, args.reasoners)
+        TestModes.TIME: ClassificationTimeTest(args.datasets, args.reasoners, args.all_syntaxes)
     }[args.mode].start()
     return 0
 
@@ -36,7 +36,7 @@ def consistency_sub(args):
     """:rtype : int"""
     {
         TestModes.CORRECTNESS: ConsistencyCorrectnessTest(args.datasets),
-        TestModes.TIME: ConsistencyTimeTest(args.datasets, args.reasoners)
+        TestModes.TIME: ConsistencyTimeTest(args.datasets, args.reasoners, args.all_syntaxes)
     }[args.mode].start()
     return 0
 
@@ -60,22 +60,6 @@ def build_parser():
                        help='Show this help message and exit.',
                        action='help')
 
-    # Dataset parser
-    dataset_parser = argparse.ArgumentParser(add_help=False)
-
-    group = dataset_parser.add_argument_group('Datasets')
-    group.add_argument('-d', '--datasets',
-                       nargs='+',
-                       help='Desired datasets.')
-
-    # Reasoners parser
-    reasoner_parser = argparse.ArgumentParser(add_help=False)
-
-    group = reasoner_parser.add_argument_group('Reasoners')
-    group.add_argument('-r', '--reasoners',
-                       nargs='+',
-                       help='Desired reasoners.')
-
     # Mode parser
     mode_parser = argparse.ArgumentParser(add_help=False)
 
@@ -84,6 +68,20 @@ def build_parser():
                        choices=TestModes.ALL,
                        default=TestModes.ALL[0],
                        help='Test mode.')
+
+    # Configuration parser
+    config_parser = argparse.ArgumentParser(add_help=False)
+
+    group = config_parser.add_argument_group('Configuration')
+    group.add_argument('-d', '--datasets',
+                       nargs='+',
+                       help='Desired datasets.')
+    group.add_argument('-r', '--reasoners',
+                       nargs='+',
+                       help='Desired reasoners.')
+    group.add_argument('-a', '--all-syntaxes',
+                       action='store_true',
+                       help='If set, the test is run on all supported syntaxes.')
 
     # Main parser
     main_parser = argparse.ArgumentParser(prog='test',
@@ -98,7 +96,7 @@ def build_parser():
     parser_classification = subparsers.add_parser('classification',
                                                   description=desc,
                                                   help=desc,
-                                                  parents=[help_parser, mode_parser, dataset_parser, reasoner_parser],
+                                                  parents=[help_parser, mode_parser, config_parser],
                                                   add_help=False)
 
     parser_classification.set_defaults(func=classification_sub)
@@ -108,7 +106,7 @@ def build_parser():
     parser_consistency = subparsers.add_parser('consistency',
                                                description=desc,
                                                help=desc,
-                                               parents=[help_parser, mode_parser, dataset_parser, reasoner_parser],
+                                               parents=[help_parser, mode_parser, config_parser],
                                                add_help=False)
 
     parser_consistency.set_defaults(func=consistency_sub)
@@ -118,7 +116,7 @@ def build_parser():
     parser_abduction_contraction = subparsers.add_parser('abduction-contraction',
                                                          description=desc,
                                                          help=desc,
-                                                         parents=[help_parser, reasoner_parser],
+                                                         parents=[help_parser, config_parser],
                                                          add_help=False)
 
     parser_abduction_contraction.set_defaults(func=abduction_contraction_sub)

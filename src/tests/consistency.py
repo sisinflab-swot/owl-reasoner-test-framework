@@ -78,8 +78,9 @@ class ConsistencyTimeTest(Test):
 
         for reasoner in self._reasoners:
             logger.log('- {}:'.format(reasoner.name))
+            syntaxes = reasoner.supported_syntaxes if self._all_syntaxes else [reasoner.preferred_syntax]
 
-            for syntax in reasoner.supported_syntaxes:
+            for syntax in syntaxes:
                 ontology = ontologies[syntax]
 
                 try:

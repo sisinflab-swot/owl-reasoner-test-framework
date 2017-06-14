@@ -20,6 +20,11 @@ class OWLReasoner(object):
         """:rtype : list[str]"""
         pass
 
+    @abstractproperty
+    def preferred_syntax(self):
+        """:rtype : str"""
+        pass
+
     # Public methods
 
     def __init__(self, path):

@@ -17,6 +17,10 @@ class MiniME(OWLReasoner):
     def supported_syntaxes(self):
         return [OWLSyntax.RDFXML]
 
+    @property
+    def preferred_syntax(self):
+        return OWLSyntax.RDFXML
+
     def classify(self, input_file, output_file=None, timeout=None):
         exc.raise_if_not_found(input_file, file_type='file')
 

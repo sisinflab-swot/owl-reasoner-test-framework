@@ -16,6 +16,10 @@ class JavaReasoner(OWLReasoner):
     def supported_syntaxes(self):
         return [OWLSyntax.RDFXML, OWLSyntax.FUNCTIONAL]
 
+    @property
+    def preferred_syntax(self):
+        return OWLSyntax.RDFXML
+
     # Public methods
 
     def __init__(self, name, path, owl_tool_path, vm_opts):
