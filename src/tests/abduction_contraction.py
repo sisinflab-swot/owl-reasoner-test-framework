@@ -2,6 +2,7 @@ import os
 
 from src import config
 from src.reasoners.owl import OWLSyntax
+from src.utils import echo
 from src.utils.proc import WatchdogException
 from test import Test
 
@@ -41,15 +42,18 @@ class AbductionContractionTimeTest(Test):
             return
 
         for iteration in xrange(config.Reasoners.ABDUCTION_CONTRACTION_ITERATIONS):
-            logger.log('Run {}:'.format(iteration + 1))
+            logger.log('Run {}:'.format(iteration + 1), color=echo.Color.YELLOW)
+            logger.indent_level += 1
 
             for request in requests:
                 request_name = os.path.basename(request)
-                logger.log('    Request: {}'.format(request_name))
+                logger.log('Request: {}'.format(request_name))
+                logger.indent_level += 1
+
                 csv_row = [onto_name, request_name]
 
                 for reasoner in self._reasoners:
-                    logger.log('        {}: '.format(reasoner.name), endl=False)
+                    logger.log('- {}: '.format(reasoner.name), endl=False)
                     try:
                         stats = reasoner.abduction_contraction(resource, request,
                                                                timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT)
@@ -72,6 +76,8 @@ class AbductionContractionTimeTest(Test):
                                                                   stats.request_parsing_ms,
                                                                   stats.init_ms,
                                                                   stats.reasoning_ms))
+                logger.indent_level -= 1
                 csv_writer.writerow(csv_row)
 
+            logger.indent_level -= 1
             logger.log('')

@@ -102,6 +102,7 @@ class Test(object):
 
                     logger.log('{}'.format(onto_name), color=echo.Color.YELLOW, endl=False)
                     logger.log(' ({})'.format(size_str))
+                    logger.indent_level += 1
 
                     try:
                         self.run(onto_name, ontologies, logger, csv_writer)
@@ -111,5 +112,7 @@ class Test(object):
                         else:
                             err_msg = e.message if e.message else str(e)
                             echo.error(err_msg)
+                    finally:
+                        logger.indent_level -= 1
 
                     logger.log('')

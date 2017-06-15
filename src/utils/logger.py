@@ -6,6 +6,13 @@ import exc
 class Logger(object):
     """A logger object that logs to both a file and stdout."""
 
+    # Properties
+
+    indent_level = 0
+    indent_string = '    '
+
+    __should_indent = False
+
     # Public methods
 
     def __init__(self, file_path):
@@ -37,8 +44,15 @@ class Logger(object):
             self.__open()
             should_close = True
 
+        if self.__should_indent:
+            for _ in xrange(self.indent_level):
+                echo.pretty(self.indent_string, endl=False, out_file=self.__file)
+                echo.pretty(self.indent_string, endl=False)
+
         echo.pretty(message, endl=endl, out_file=self.__file)
         echo.pretty(message, color=color, endl=endl)
+
+        self.__should_indent = endl
 
         if should_close:
             self.__close()

@@ -36,14 +36,16 @@ class ClassificationCorrectnessTest(Test):
         csv_row = [onto_name]
 
         # Classify
-        logger.log('    {}: '.format(minime.name), endl=False)
+        logger.log('{}: '.format(minime.name), endl=False)
+        logger.indent_level += 1
+
         minime.classify(ontologies[minime.preferred_syntax].path,
                         output_file=minime_out,
                         timeout=config.Reasoners.CLASSIFICATION_TIMEOUT)
         logger.log('done', color=echo.Color.GREEN)
 
         for reasoner in [r for r in self._reasoners if r.name != minime.name]:
-            logger.log('        {}: '.format(reasoner.name), endl=False)
+            logger.log('{}: '.format(reasoner.name), endl=False)
 
             try:
                 reasoner.classify(ontologies[reasoner.preferred_syntax].path,
@@ -66,6 +68,7 @@ class ClassificationCorrectnessTest(Test):
             logger.log(result, color=color)
             csv_row.append(result)
 
+        logger.indent_level -= 1
         csv_writer.writerow(csv_row)
 
 
@@ -94,19 +97,22 @@ class ClassificationTimeTest(Test):
         fail = {syntax: [] for syntax in OWLSyntax.ALL}
 
         for iteration in xrange(config.Reasoners.CLASSIFICATION_ITERATIONS):
-            logger.log('Run {}:'.format(iteration + 1))
+            logger.log('Run {}:'.format(iteration + 1), color=echo.Color.YELLOW)
+            logger.indent_level += 1
 
             csv_row = [onto_name]
 
             for reasoner in self._reasoners:
-                logger.log('    - {}:'.format(reasoner.name))
+                logger.log('- {}:'.format(reasoner.name))
+                logger.indent_level += 1
+
                 syntaxes = reasoner.supported_syntaxes if self._all_syntaxes else [reasoner.preferred_syntax]
 
                 for syntax in syntaxes:
                     # Skip already failed or timed out.
                     if reasoner.name in fail[syntax]:
                         csv_row.extend(['skip', 'skip'])
-                        logger.log('        {}: skip'.format(syntax))
+                        logger.log('{}: skip'.format(syntax))
                         continue
 
                     ontology = ontologies[syntax]
@@ -116,17 +122,19 @@ class ClassificationTimeTest(Test):
                                                   timeout=config.Reasoners.CLASSIFICATION_TIMEOUT)
                     except WatchdogException:
                         csv_row.extend(['timeout', 'timeout'])
-                        logger.log('        {}: timeout'.format(syntax))
+                        logger.log('{}: timeout'.format(syntax))
                         fail[syntax].append(reasoner.name)
                     except Exception:
                         csv_row.extend(['error', 'error'])
-                        logger.log('        {}: error'.format(syntax))
+                        logger.log('{}: error'.format(syntax))
                         fail[syntax].append(reasoner.name)
                     else:
                         csv_row.extend([stats.parsing_ms, stats.reasoning_ms])
-                        logger.log('        ', endl=False)
                         logger.log('{}: Parsing {:.0f} ms | Classification {:.0f} ms'.format(syntax,
                                                                                              stats.parsing_ms,
                                                                                              stats.reasoning_ms))
+                logger.indent_level -= 1
+
+            logger.indent_level -= 1
             logger.log('')
             csv_writer.writerow(csv_row)
