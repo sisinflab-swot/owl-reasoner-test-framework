@@ -18,7 +18,7 @@ class JavaReasoner(OWLReasoner):
 
     @property
     def preferred_syntax(self):
-        return OWLSyntax.RDFXML
+        return OWLSyntax.FUNCTIONAL
 
     # Public methods
 
