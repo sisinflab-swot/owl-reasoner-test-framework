@@ -16,10 +16,6 @@ class AbductionContractionTimeTest(Test):
     def setup(self, logger, csv_writer):
         del logger  # Unused
 
-        # Reasoners
-        if not self._reasoners:
-            self._reasoners = config.Reasoners.NON_STANDARD
-
         # CSV header
         columns = ['Resource', 'Request']
 
@@ -44,33 +40,38 @@ class AbductionContractionTimeTest(Test):
             logger.log('No available requests.')
             return
 
-        for request in requests:
-            request_name = os.path.basename(request)
-            logger.log('    Request: {}'.format(request_name))
-            csv_row = [onto_name, request_name]
+        for iteration in xrange(config.Reasoners.ABDUCTION_CONTRACTION_ITERATIONS):
+            logger.log('Run {}:'.format(iteration + 1))
 
-            for reasoner in self._reasoners:
-                logger.log('        {}: '.format(reasoner.name), endl=False)
-                try:
-                    stats = reasoner.abduction_contraction(resource, request,
-                                                           timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT)
-                except WatchdogException:
-                    csv_row.extend(['timeout', 'timeout', 'timeout', 'timeout'])
-                    logger.log('timeout')
-                except Exception:
-                    csv_row.extend(['error', 'error', 'error', 'error'])
-                    logger.log('error')
-                else:
-                    csv_row.extend([stats.resource_parsing_ms,
-                                    stats.request_parsing_ms,
-                                    stats.init_ms,
-                                    stats.reasoning_ms])
+            for request in requests:
+                request_name = os.path.basename(request)
+                logger.log('    Request: {}'.format(request_name))
+                csv_row = [onto_name, request_name]
 
-                    logger.log(('Resource parsing {:.0f} ms | '
-                                'Request parsing {:.0f} ms | '
-                                'Reasoner init {:.0f} ms | '
-                                'Reasoning {:.0f} ms').format(stats.resource_parsing_ms,
-                                                              stats.request_parsing_ms,
-                                                              stats.init_ms,
-                                                              stats.reasoning_ms))
-            csv_writer.writerow(csv_row)
+                for reasoner in self._reasoners:
+                    logger.log('        {}: '.format(reasoner.name), endl=False)
+                    try:
+                        stats = reasoner.abduction_contraction(resource, request,
+                                                               timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT)
+                    except WatchdogException:
+                        csv_row.extend(['timeout', 'timeout', 'timeout', 'timeout'])
+                        logger.log('timeout')
+                    except Exception:
+                        csv_row.extend(['error', 'error', 'error', 'error'])
+                        logger.log('error')
+                    else:
+                        csv_row.extend([stats.resource_parsing_ms,
+                                        stats.request_parsing_ms,
+                                        stats.init_ms,
+                                        stats.reasoning_ms])
+
+                        logger.log(('Resource parsing {:.0f} ms | '
+                                    'Request parsing {:.0f} ms | '
+                                    'Reasoner init {:.0f} ms | '
+                                    'Reasoning {:.0f} ms').format(stats.resource_parsing_ms,
+                                                                  stats.request_parsing_ms,
+                                                                  stats.init_ms,
+                                                                  stats.reasoning_ms))
+                csv_writer.writerow(csv_row)
+
+            logger.log('')

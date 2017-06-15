@@ -1,4 +1,5 @@
 from src import config
+from src.reasoners.owl import OWLSyntax
 from src.utils import echo
 from src.utils.proc import WatchdogException
 from test import Test
@@ -61,7 +62,7 @@ class ConsistencyTimeTest(Test):
         columns = ['Ontology']
 
         for reasoner in self._reasoners:
-            for syntax in reasoner.supported_syntaxes:
+            for syntax in reasoner.supported_syntaxes if self._all_syntaxes else [reasoner.preferred_syntax]:
                 columns.append('{} {} parsing'.format(reasoner.name, syntax))
                 columns.append('{} {} consistency'.format(reasoner.name, syntax))
 
@@ -70,29 +71,43 @@ class ConsistencyTimeTest(Test):
     # noinspection PyBroadException
     def run(self, onto_name, ontologies, logger, csv_writer):
 
-        csv_row = [onto_name]
+        fail = {syntax: [] for syntax in OWLSyntax.ALL}
 
-        for reasoner in self._reasoners:
-            logger.log('- {}:'.format(reasoner.name))
-            syntaxes = reasoner.supported_syntaxes if self._all_syntaxes else [reasoner.preferred_syntax]
+        for iteration in xrange(config.Reasoners.CONSISTENCY_ITERATIONS):
+            logger.log('Run {}:'.format(iteration + 1))
 
-            for syntax in syntaxes:
-                ontology = ontologies[syntax]
+            csv_row = [onto_name]
 
-                try:
-                    results = reasoner.consistency(ontology.path,
-                                                   timeout=config.Reasoners.CONSISTENCY_TIMEOUT)
-                except WatchdogException:
-                    csv_row.extend(['timeout', 'timeout'])
-                    logger.log('    {}: timeout'.format(syntax))
-                except Exception:
-                    csv_row.extend(['error', 'error'])
-                    logger.log('    {}: error'.format(syntax))
-                else:
-                    stats = results.stats
-                    csv_row.extend([stats.parsing_ms, stats.reasoning_ms])
-                    logger.log('    {}: Parsing {:.0f} ms | Consistency {:.0f} ms'.format(syntax,
+            for reasoner in self._reasoners:
+                logger.log('    - {}:'.format(reasoner.name))
+                syntaxes = reasoner.supported_syntaxes if self._all_syntaxes else [reasoner.preferred_syntax]
+
+                for syntax in syntaxes:
+                    # Skip already failed or timed out.
+                    if reasoner.name in fail[syntax]:
+                        csv_row.extend(['skip', 'skip'])
+                        logger.log('        {}: skip'.format(syntax))
+                        continue
+
+                    ontology = ontologies[syntax]
+
+                    try:
+                        results = reasoner.consistency(ontology.path,
+                                                       timeout=config.Reasoners.CONSISTENCY_TIMEOUT)
+                    except WatchdogException:
+                        csv_row.extend(['timeout', 'timeout'])
+                        logger.log('        {}: timeout'.format(syntax))
+                        fail[syntax].append(reasoner.name)
+                    except Exception:
+                        csv_row.extend(['error', 'error'])
+                        logger.log('        {}: error'.format(syntax))
+                        fail[syntax].append(reasoner.name)
+                    else:
+                        stats = results.stats
+                        csv_row.extend([stats.parsing_ms, stats.reasoning_ms])
+                        logger.log('        ', endl=False)
+                        logger.log('{}: Parsing {:.0f} ms | Consistency {:.0f} ms'.format(syntax,
                                                                                           stats.parsing_ms,
                                                                                           stats.reasoning_ms))
-
-        csv_writer.writerow(csv_row)
+            logger.log('')
+            csv_writer.writerow(csv_row)

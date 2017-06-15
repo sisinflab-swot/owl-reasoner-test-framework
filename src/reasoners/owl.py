@@ -97,6 +97,8 @@ class OWLSyntax(object):
     RDFXML = 'rdfxml'
     FUNCTIONAL = 'functional'
 
+    ALL = [RDFXML, FUNCTIONAL]
+
 
 class ReasoningStats(object):
     """Contains stats about a reasoning task."""

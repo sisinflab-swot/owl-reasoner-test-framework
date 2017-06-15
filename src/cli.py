@@ -19,7 +19,8 @@ class TestModes(object):
 
 def abduction_contraction_sub(args):
     """:rtype : int"""
-    AbductionContractionTimeTest(['sisinflab'], args.reasoners).start()
+    reasoners = args.reasoners if args.reasoners else [r.name for r in config.Reasoners.NON_STANDARD]
+    AbductionContractionTimeTest(['sisinflab'], reasoners).start()
     return 0
 
 
