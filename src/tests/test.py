@@ -47,9 +47,9 @@ class Test(object):
         self._all_syntaxes = all_syntaxes
 
         if reasoners:
-            self._reasoners = [config.Reasoners.by_name[n] for n in reasoners]
+            self._reasoners = [config.Reasoners.BY_NAME[n] for n in reasoners]
         else:
-            self._reasoners = config.Reasoners.all
+            self._reasoners = config.Reasoners.ALL
 
     def start(self):
         """Starts the test."""

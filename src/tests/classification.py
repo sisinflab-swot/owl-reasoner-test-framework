@@ -19,7 +19,7 @@ class ClassificationCorrectnessTest(Test):
 
         csv_header = ['Ontology']
 
-        for reasoner in [r for r in self._reasoners if r.name != config.Reasoners.miniME.name]:
+        for reasoner in [r for r in self._reasoners if r.name != config.Reasoners.MINIME.name]:
             csv_header.append(reasoner.name)
 
         csv_writer.writerow(csv_header)
@@ -28,7 +28,7 @@ class ClassificationCorrectnessTest(Test):
 
         fileutils.remove_dir_contents(config.Paths.TEMP_DIR)
 
-        minime = config.Reasoners.miniME
+        minime = config.Reasoners.MINIME
         reference_out = os.path.join(config.Paths.TEMP_DIR, 'reference.txt')
         minime_out = os.path.join(config.Paths.TEMP_DIR, 'minime.txt')
 
@@ -38,7 +38,7 @@ class ClassificationCorrectnessTest(Test):
         logger.log('    {}: '.format(minime.name), endl=False)
         minime.classify(ontologies[minime.preferred_syntax].path,
                         output_file=minime_out,
-                        timeout=config.Reasoners.classification_timeout)
+                        timeout=config.Reasoners.CLASSIFICATION_TIMEOUT)
         logger.log('done', color=echo.Color.GREEN)
 
         for reasoner in [r for r in self._reasoners if r.name != minime.name]:
@@ -47,7 +47,7 @@ class ClassificationCorrectnessTest(Test):
             try:
                 reasoner.classify(ontologies[reasoner.preferred_syntax].path,
                                   output_file=reference_out,
-                                  timeout=config.Reasoners.classification_timeout)
+                                  timeout=config.Reasoners.CLASSIFICATION_TIMEOUT)
             except WatchdogException:
                 result = 'timeout'
                 color = echo.Color.RED
@@ -100,7 +100,7 @@ class ClassificationTimeTest(Test):
                 ontology = ontologies[syntax]
 
                 try:
-                    stats = reasoner.classify(ontology.path, timeout=config.Reasoners.classification_timeout)
+                    stats = reasoner.classify(ontology.path, timeout=config.Reasoners.CLASSIFICATION_TIMEOUT)
                 except WatchdogException:
                     csv_row.extend(['timeout', 'timeout'])
                     logger.log('    {}: timeout'.format(syntax))

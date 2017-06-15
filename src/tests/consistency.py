@@ -27,7 +27,7 @@ class ConsistencyCorrectnessTest(Test):
 
             try:
                 reasoner_results = reasoner.consistency(ontologies[reasoner.preferred_syntax].path,
-                                                        timeout=config.Reasoners.consistency_timeout)
+                                                        timeout=config.Reasoners.CONSISTENCY_TIMEOUT)
             except WatchdogException:
                 result = 'timeout'
                 color = echo.Color.RED
@@ -81,7 +81,7 @@ class ConsistencyTimeTest(Test):
 
                 try:
                     results = reasoner.consistency(ontology.path,
-                                                   timeout=config.Reasoners.consistency_timeout)
+                                                   timeout=config.Reasoners.CONSISTENCY_TIMEOUT)
                 except WatchdogException:
                     csv_row.extend(['timeout', 'timeout'])
                     logger.log('    {}: timeout'.format(syntax))

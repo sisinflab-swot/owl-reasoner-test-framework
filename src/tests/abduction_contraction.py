@@ -18,7 +18,7 @@ class AbductionContractionTimeTest(Test):
 
         # Reasoners
         if not self._reasoners:
-            self._reasoners = config.Reasoners.non_standard
+            self._reasoners = config.Reasoners.NON_STANDARD
 
         # CSV header
         columns = ['Resource', 'Request']
@@ -53,7 +53,7 @@ class AbductionContractionTimeTest(Test):
                 logger.log('        {}: '.format(reasoner.name), endl=False)
                 try:
                     stats = reasoner.abduction_contraction(resource, request,
-                                                           timeout=config.Reasoners.abduction_contraction_timeout)
+                                                           timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT)
                 except WatchdogException:
                     csv_row.extend(['timeout', 'timeout', 'timeout', 'timeout'])
                     logger.log('timeout')

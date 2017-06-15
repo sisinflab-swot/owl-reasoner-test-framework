@@ -32,40 +32,39 @@ class Paths(object):
 
 class Reasoners(object):
     """Reasoners config namespace."""
-    classification_timeout = 300.0
-    consistency_timeout = 120.0
-    abduction_contraction_timeout = 60.0
+    CLASSIFICATION_TIMEOUT = 1200.0
+    CONSISTENCY_TIMEOUT = 1200.0
+    ABDUCTION_CONTRACTION_TIMEOUT = 1200.0
 
-    common_vm_opts = ['-Xmx16g', '-DentityExpansionLimit=1000000000']
+    COMMON_VM_OPTS = ['-Xmx16g', '-DentityExpansionLimit=1000000000']
 
-    fact = JavaReasoner(name='Fact++',
+    FACT = JavaReasoner(name='Fact++',
                         path=Paths.FACT,
                         owl_tool_path=Paths.OWLTOOL,
-                        vm_opts=common_vm_opts + ['-Djava.library.path={}'.format(Paths.FACT_DIR)])
+                        vm_opts=COMMON_VM_OPTS + ['-Djava.library.path={}'.format(Paths.FACT_DIR)])
 
-    hermit = JavaReasoner(name='HermiT',
+    HERMIT = JavaReasoner(name='HermiT',
                           path=Paths.HERMIT,
                           owl_tool_path=Paths.OWLTOOL,
-                          vm_opts=common_vm_opts)
+                          vm_opts=COMMON_VM_OPTS)
 
-    konclude = Konclude(path=Paths.KONCLUDE,
+    KONCLUDE = Konclude(path=Paths.KONCLUDE,
                         owl_tool_path=Paths.OWLTOOL,
-                        vm_opts=common_vm_opts)
+                        vm_opts=COMMON_VM_OPTS)
 
-    miniME = MiniME(path=Paths.MINIME)
+    MINIME = MiniME(path=Paths.MINIME)
 
-    miniMEJava = JavaReasoner(name='MiniME Java',
+    MINIMEJAVA = JavaReasoner(name='MiniME Java',
                               path=Paths.MINIME_JAVA,
                               owl_tool_path=Paths.OWLTOOL,
-                              vm_opts=common_vm_opts)
+                              vm_opts=COMMON_VM_OPTS)
 
-    trowl = JavaReasoner(name='TrOWL',
+    TROWL = JavaReasoner(name='TrOWL',
                          path=Paths.TROWL,
                          owl_tool_path=Paths.OWLTOOL,
-                         vm_opts=common_vm_opts)
+                         vm_opts=COMMON_VM_OPTS)
 
-    reference = konclude
-    all = [fact, hermit, konclude, miniME, miniMEJava, trowl]
-    non_standard = [miniME, miniMEJava]
+    ALL = [FACT, HERMIT, KONCLUDE, MINIME, MINIMEJAVA, TROWL]
+    NON_STANDARD = [MINIME, MINIMEJAVA]
 
-    by_name = dict(zip([r.name for r in all], all))
+    BY_NAME = dict(zip([r.name for r in ALL], ALL))
