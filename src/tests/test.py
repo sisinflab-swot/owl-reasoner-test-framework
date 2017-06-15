@@ -51,9 +51,13 @@ class Test(object):
         else:
             self._reasoners = config.Reasoners.ALL
 
-    def start(self):
-        """Starts the test."""
+    def start(self, resume_ontology=None):
+        """Starts the test.
+
+        :param str resume_ontology : The ontology from which the test should be resumed.
+        """
         data_dir = config.Paths.DATA_DIR
+        search_for_resume = True if resume_ontology else False
 
         if self._datasets:
             datasets = [path.join(data_dir, d) for d in self._datasets]
@@ -90,6 +94,13 @@ class Test(object):
 
                 # Test dataset
                 for onto_name in onto_names:
+
+                    # Allow resuming the test after a certain ontology.
+                    if search_for_resume:
+                        if onto_name == resume_ontology:
+                            search_for_resume = False
+                        continue
+
                     func_ontology = OWLOntology(path.join(func_dir, onto_name), OWLSyntax.FUNCTIONAL)
                     xml_ontology = OWLOntology(path.join(xml_dir, onto_name), OWLSyntax.RDFXML)
 

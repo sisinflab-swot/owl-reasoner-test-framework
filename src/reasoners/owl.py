@@ -78,6 +78,10 @@ class OWLOntology(object):
         return os.path.basename(self.path)
 
     @property
+    def size(self):
+        return os.path.getsize(self.path)
+
+    @property
     def readable_size(self):
         """:rtype : str"""
         return fileutils.human_readable_size(self.path)

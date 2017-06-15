@@ -20,7 +20,7 @@ class TestModes(object):
 def abduction_contraction_sub(args):
     """:rtype : int"""
     reasoners = args.reasoners if args.reasoners else [r.name for r in config.Reasoners.NON_STANDARD]
-    AbductionContractionTimeTest(['sisinflab'], reasoners).start()
+    AbductionContractionTimeTest(['sisinflab'], reasoners).start(args.resume_after)
     return 0
 
 
@@ -29,7 +29,7 @@ def classification_sub(args):
     {
         TestModes.CORRECTNESS: ClassificationCorrectnessTest(args.datasets, args.reasoners),
         TestModes.TIME: ClassificationTimeTest(args.datasets, args.reasoners, args.all_syntaxes)
-    }[args.mode].start()
+    }[args.mode].start(args.resume_after)
     return 0
 
 
@@ -38,7 +38,7 @@ def consistency_sub(args):
     {
         TestModes.CORRECTNESS: ConsistencyCorrectnessTest(args.datasets, args.reasoners),
         TestModes.TIME: ConsistencyTimeTest(args.datasets, args.reasoners, args.all_syntaxes)
-    }[args.mode].start()
+    }[args.mode].start(args.resume_after)
     return 0
 
 
@@ -80,6 +80,8 @@ def build_parser():
     group.add_argument('-r', '--reasoners',
                        nargs='+',
                        help='Desired reasoners.')
+    group.add_argument('-f', '--resume-after',
+                       help='Resume the test after the specified ontology.')
     group.add_argument('-a', '--all-syntaxes',
                        action='store_true',
                        help='If set, the test is run on all supported syntaxes.')
