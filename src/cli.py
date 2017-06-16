@@ -4,6 +4,7 @@ import config
 from tests.abduction_contraction import AbductionContractionTimeTest
 from tests.classification import ClassificationCorrectnessTest, ClassificationTimeTest
 from tests.consistency import ConsistencyCorrectnessTest, ConsistencyTimeTest
+from tests.info import InfoTest
 
 
 class TestModes(object):
@@ -19,8 +20,9 @@ class TestModes(object):
 
 def abduction_contraction_sub(args):
     """:rtype : int"""
+    datasets = args.datasets if args.datasets else ['sisinflab']
     reasoners = args.reasoners if args.reasoners else [r.name for r in config.Reasoners.NON_STANDARD]
-    AbductionContractionTimeTest(['sisinflab'], reasoners).start(args.resume_after)
+    AbductionContractionTimeTest(datasets, reasoners).start(args.resume_after)
     return 0
 
 
@@ -39,6 +41,12 @@ def consistency_sub(args):
         TestModes.CORRECTNESS: ConsistencyCorrectnessTest(args.datasets, args.reasoners),
         TestModes.TIME: ConsistencyTimeTest(args.datasets, args.reasoners, args.all_syntaxes)
     }[args.mode].start(args.resume_after)
+    return 0
+
+
+def info_sub(args):
+    """:rtype : int"""
+    InfoTest(args.datasets, args.reasoners).start(args.resume_after)
     return 0
 
 
@@ -123,6 +131,16 @@ def build_parser():
                                                          add_help=False)
 
     parser_abduction_contraction.set_defaults(func=abduction_contraction_sub)
+
+    # Dataset info subcommand
+    desc = 'Print information about the reasoners and datasets.'
+    parser_info = subparsers.add_parser('info',
+                                        description=desc,
+                                        help=desc,
+                                        parents=[help_parser, config_parser],
+                                        add_help=False)
+
+    parser_info.set_defaults(func=info_sub)
 
     return main_parser
 
