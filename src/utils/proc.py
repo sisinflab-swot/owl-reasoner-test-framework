@@ -158,7 +158,7 @@ def call(args, output_action=OutputAction.RETURN, timeout=None):
 def call_background(args, quiet=False):
     """Call process in background.
 
-    :param list args : Process arguments.
+    :param list[str] args : Process arguments.
     :param bool quiet : If True the output is discarded, else it is printed.
     """
     exc.raise_if_falsy(args=args)
