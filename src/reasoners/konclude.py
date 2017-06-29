@@ -60,7 +60,7 @@ class Konclude(OWLReasoner):
                      vm_opts=self.__vm_opts,
                      output_action=proc.OutputAction.DISCARD)
 
-        return self.__extract_classification_stats(call_result.stdout, call_result.stderr)
+        return self.__extract_classification_stats(call_result.stdout)
 
     def consistency(self, input_file, timeout=None):
         exc.raise_if_not_found(input_file, file_type='file')
@@ -68,18 +68,17 @@ class Konclude(OWLReasoner):
         args = [self._path, 'consistency', '-i', input_file, '-v']
         call_result = proc.call(args, output_action=proc.OutputAction.RETURN, timeout=timeout)
 
-        return self.__extract_consistency_results(call_result.stdout, call_result.stderr)
+        return self.__extract_consistency_results(call_result.stdout)
 
     def abduction_contraction(self, resource_file, request_file, timeout=None):
         raise NotImplementedError
 
     # Private methods
 
-    def __extract_stats(self, stdout, stderr):
-        """Extract stats for a reasoning task by parsing stdout and stderr.
+    def __extract_stats(self, stdout):
+        """Extract stats for a reasoning task by parsing stdout.
 
         :param str stdout : stdout.
-        :param str stderr : stderr.
         :rtype : Stats
         :return : Reasoning task stats.
         """
@@ -93,17 +92,16 @@ class Konclude(OWLReasoner):
         exc.raise_if_falsy(result=result)
         total_ms = float(result.group(1))
 
-        return ReasoningStats(parsing_ms=parsing_ms, reasoning_ms=(total_ms - parsing_ms), error=stderr)
+        return ReasoningStats(parsing_ms=parsing_ms, reasoning_ms=(total_ms - parsing_ms))
 
-    def __extract_classification_stats(self, stdout, stderr):
-        """Extract stats for the classification task by parsing stdout and stderr.
+    def __extract_classification_stats(self, stdout):
+        """Extract stats for the classification task by parsing stdout.
 
         :param str stdout : stdout.
-        :param str stderr : stderr.
         :rtype : Stats
         :return : Reasoning task stats.
         """
-        stats = self.__extract_stats(stdout, stderr)
+        stats = self.__extract_stats(stdout)
 
         result = re.search(r'Query \'UnnamedWriteClassHierarchyQuery\' processed in \'(.*)\' ms\.', stdout)
 
@@ -113,15 +111,14 @@ class Konclude(OWLReasoner):
 
         return stats
 
-    def __extract_consistency_results(self, stdout, stderr):
-        """Extract the result of the consistency task by parsing stdout and stderr.
+    def __extract_consistency_results(self, stdout):
+        """Extract the result of the consistency task by parsing stdout.
 
         :param str stdout : stdout.
-        :param str stderr : stderr.
         :rtype : ConsistencyResults
         :return : Consistency task results.
         """
-        stats = self.__extract_stats(stdout, stderr)
+        stats = self.__extract_stats(stdout)
 
         result = re.search(r'Ontology \'.*\' is (.*)\.', stdout)
         exc.raise_if_falsy(result=result)

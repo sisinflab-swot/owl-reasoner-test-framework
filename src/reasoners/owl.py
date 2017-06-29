@@ -107,15 +107,13 @@ class OWLSyntax(object):
 class ReasoningStats(object):
     """Contains stats about a reasoning task."""
 
-    def __init__(self, parsing_ms=0.0, reasoning_ms=0.0, error=None):
+    def __init__(self, parsing_ms=0.0, reasoning_ms=0.0):
         """
         :param float parsing_ms : Parsing time in ms.
         :param float reasoning_ms : Reasoning time in ms.
-        :param str error : Error message.
         """
         self.parsing_ms = parsing_ms
         self.reasoning_ms = reasoning_ms
-        self.error = error
 
 
 class ConsistencyResults(object):
@@ -132,16 +130,14 @@ class ConsistencyResults(object):
 class AbductionContractionResults(object):
     """Contains results for the abduction-contraction task."""
 
-    def __init__(self, resource_parsing_ms=0.0, request_parsing_ms=0.0, init_ms=0.0, reasoning_ms=0.0, error=None):
+    def __init__(self, resource_parsing_ms=0.0, request_parsing_ms=0.0, init_ms=0.0, reasoning_ms=0.0):
         """
         :param float resource_parsing_ms : Resource parsing time in ms.
         :param float request_parsing_ms : Request parsing time in ms.
         :param float init_ms : Reasoner init time in ms.
         :param float reasoning_ms : Reasoning time in ms.
-        :param str error : Error message.
         """
         self.resource_parsing_ms = resource_parsing_ms
         self.request_parsing_ms = request_parsing_ms
         self.init_ms = init_ms
         self.reasoning_ms = reasoning_ms
-        self.error = error

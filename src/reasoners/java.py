@@ -67,7 +67,7 @@ class JavaReasoner(OWLReasoner):
                      vm_opts=self.__vm_opts,
                      output_action=proc.OutputAction.DISCARD)
 
-        return minime.extract_stats(call_result.stdout, call_result.stderr)
+        return minime.extract_stats(call_result.stdout)
 
     def consistency(self, input_file, timeout=None):
         exc.raise_if_not_found(input_file, file_type='file')
@@ -79,7 +79,7 @@ class JavaReasoner(OWLReasoner):
                                output_action=proc.OutputAction.RETURN,
                                timeout=timeout)
 
-        return minime.extract_consistency_results(call_result.stdout, call_result.stderr)
+        return minime.extract_consistency_results(call_result.stdout)
 
     def abduction_contraction(self, resource_file, request_file, timeout=None):
         exc.raise_if_not_found(resource_file, file_type='file')
@@ -92,4 +92,4 @@ class JavaReasoner(OWLReasoner):
                                output_action=proc.OutputAction.RETURN,
                                timeout=timeout)
 
-        return minime.extract_abduction_contraction_results(call_result.stdout, call_result.stderr)
+        return minime.extract_abduction_contraction_results(call_result.stdout)
