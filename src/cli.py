@@ -2,9 +2,10 @@ import argparse
 
 import config
 from reasoners.owl import TestMode
-from tests.abduction_contraction import AbductionContractionTimeTest
+from tests.test import NotImplementedTest
+from tests.abduction_contraction import AbductionContractionTimeTest, AbductionContractionMemoryTest
 from tests.classification import ClassificationCorrectnessTest, ClassificationTimeTest, ClassificationMemoryTest
-from tests.consistency import ConsistencyCorrectnessTest, ConsistencyTimeTest
+from tests.consistency import ConsistencyCorrectnessTest, ConsistencyTimeTest, ConsistencyMemoryTest
 from tests.info import InfoTest
 
 
@@ -15,16 +16,36 @@ def abduction_contraction_sub(args):
     """:rtype : int"""
     datasets = args.datasets if args.datasets else ['sisinflab']
     reasoners = args.reasoners if args.reasoners else [r.name for r in config.Reasoners.NON_STANDARD]
-    AbductionContractionTimeTest(datasets, reasoners).start(args.resume_after)
+
+    {
+        TestMode.CORRECTNESS: NotImplementedTest(),
+
+        TestMode.TIME: AbductionContractionTimeTest(datasets=datasets,
+                                                    reasoners=reasoners,
+                                                    iterations=config.Reasoners.ABDUCTION_CONTRACTION_ITERATIONS),
+
+        TestMode.MEMORY: AbductionContractionMemoryTest(datasets=datasets,
+                                                        reasoners=reasoners,
+                                                        iterations=config.Reasoners.ABDUCTION_CONTRACTION_ITERATIONS)
+    }[args.mode].start(args.resume_after)
     return 0
 
 
 def classification_sub(args):
     """:rtype : int"""
     {
-        TestMode.CORRECTNESS: ClassificationCorrectnessTest(args.datasets, args.reasoners),
-        TestMode.TIME: ClassificationTimeTest(args.datasets, args.reasoners, args.all_syntaxes),
-        TestMode.MEMORY: ClassificationMemoryTest(args.datasets, args.reasoners, args.all_syntaxes)
+        TestMode.CORRECTNESS: ClassificationCorrectnessTest(datasets=args.datasets,
+                                                            reasoners=args.reasoners),
+
+        TestMode.TIME: ClassificationTimeTest(datasets=args.datasets,
+                                              reasoners=args.reasoners,
+                                              all_syntaxes=args.all_syntaxes,
+                                              iterations=config.Reasoners.CLASSIFICATION_ITERATIONS),
+
+        TestMode.MEMORY: ClassificationMemoryTest(datasets=args.datasets,
+                                                  reasoners=args.reasoners,
+                                                  all_syntaxes=args.all_syntaxes,
+                                                  iterations=config.Reasoners.CLASSIFICATION_ITERATIONS)
     }[args.mode].start(args.resume_after)
     return 0
 
@@ -32,15 +53,26 @@ def classification_sub(args):
 def consistency_sub(args):
     """:rtype : int"""
     {
-        TestMode.CORRECTNESS: ConsistencyCorrectnessTest(args.datasets, args.reasoners),
-        TestMode.TIME: ConsistencyTimeTest(args.datasets, args.reasoners, args.all_syntaxes)
+        TestMode.CORRECTNESS: ConsistencyCorrectnessTest(datasets=args.datasets,
+                                                         reasoners=args.reasoners),
+
+        TestMode.TIME: ConsistencyTimeTest(datasets=args.datasets,
+                                           reasoners=args.reasoners,
+                                           all_syntaxes=args.all_syntaxes,
+                                           iterations=config.Reasoners.CONSISTENCY_ITERATIONS),
+
+        TestMode.MEMORY: ConsistencyMemoryTest(datasets=args.datasets,
+                                               reasoners=args.reasoners,
+                                               all_syntaxes=args.all_syntaxes,
+                                               iterations=config.Reasoners.CONSISTENCY_ITERATIONS)
     }[args.mode].start(args.resume_after)
     return 0
 
 
 def info_sub(args):
     """:rtype : int"""
-    InfoTest(args.datasets, args.reasoners).start(args.resume_after)
+    InfoTest(datasets=args.datasets,
+             reasoners=args.reasoners).start(args.resume_after)
     return 0
 
 
@@ -121,7 +153,7 @@ def build_parser():
     parser_abduction_contraction = subparsers.add_parser('abduction-contraction',
                                                          description=desc,
                                                          help=desc,
-                                                         parents=[help_parser, config_parser],
+                                                         parents=[help_parser, mode_parser, config_parser],
                                                          add_help=False)
 
     parser_abduction_contraction.set_defaults(func=abduction_contraction_sub)

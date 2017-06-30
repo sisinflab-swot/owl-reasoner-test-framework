@@ -1,32 +1,54 @@
 import os
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 from src import config
 from src.reasoners.owl import OWLSyntax, TestMode
-from src.utils import echo
+from src.utils import echo, fileutils
 from src.utils.proc import WatchdogException
 from test import Test
 
 
-class AbductionContractionTimeTest(Test):
-    """Abduction/contraction time test."""
+# noinspection PyTypeChecker
+class AbductionContractionPerformanceTest(Test):
+    """Abduction/contraction performance test."""
+    __metaclass__ = ABCMeta
 
-    @property
-    def name(self):
-        return 'abduction/contraction time'
+    @abstractproperty
+    def result_fields(self):
+        """:rtype : list[str]"""
+        pass
+
+    @abstractmethod
+    def run_reasoner(self, reasoner, resource, request, logger):
+        """Called every run, for each reasoner and each ontology.
+
+        :param Reasoner reasoner : The reasoner.
+        :param Ontology resource : The resource ontology.
+        :param Ontology request : The request ontology.
+        :param Logger logger : Logger instance.
+        :rtype : list[str]
+        :return : Values for the CSV result fields.
+        """
+        pass
+
+    def __init__(self, datasets=None, reasoners=None, iterations=1):
+        """
+        :param list[str] datasets : If specified, limit the tests to the specified datasets.
+        :param list[str] reasoners : If specified, limit the tests to the specified reasoners.
+        :param int iterations : Number of iterations per ontology.
+        """
+        Test.__init__(self, datasets, reasoners)
+        self._iterations = iterations
 
     def setup(self, logger, csv_writer):
         del logger  # Unused
-
-        # CSV header
-        columns = ['Resource', 'Request']
+        csv_header = ['Resource', 'Request']
 
         for reasoner in self._reasoners:
-            columns.append('{} resource parsing'.format(reasoner.name))
-            columns.append('{} request parsing'.format(reasoner.name))
-            columns.append('{} reasoner init'.format(reasoner.name))
-            columns.append('{} reasoning'.format(reasoner.name))
+            for field in self.result_fields:
+                csv_header.append('{} {}'.format(reasoner.name, field))
 
-        csv_writer.writerow(columns)
+        csv_writer.writerow(csv_header)
 
     def run(self, onto_name, ontologies, logger, csv_writer):
 
@@ -41,7 +63,7 @@ class AbductionContractionTimeTest(Test):
             logger.log('No available requests.')
             return
 
-        for iteration in xrange(config.Reasoners.ABDUCTION_CONTRACTION_ITERATIONS):
+        for iteration in xrange(self._iterations):
             logger.log('Run {}:'.format(iteration + 1), color=echo.Color.YELLOW)
             logger.indent_level += 1
 
@@ -55,30 +77,66 @@ class AbductionContractionTimeTest(Test):
                 for reasoner in self._reasoners:
                     logger.log('- {}: '.format(reasoner.name), endl=False)
                     try:
-                        stats = reasoner.abduction_contraction(resource, request,
-                                                               timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT,
-                                                               mode=TestMode.TIME)
+                        csv_row.extend(self.run_reasoner(reasoner, resource, request, logger))
                     except WatchdogException:
                         csv_row.extend(['timeout', 'timeout', 'timeout', 'timeout'])
                         logger.log('timeout')
                     except Exception:
                         csv_row.extend(['error', 'error', 'error', 'error'])
                         logger.log('error')
-                    else:
-                        csv_row.extend([stats.resource_parsing_ms,
-                                        stats.request_parsing_ms,
-                                        stats.init_ms,
-                                        stats.reasoning_ms])
 
-                        logger.log(('Resource parsing {:.0f} ms | '
-                                    'Request parsing {:.0f} ms | '
-                                    'Reasoner init {:.0f} ms | '
-                                    'Reasoning {:.0f} ms').format(stats.resource_parsing_ms,
-                                                                  stats.request_parsing_ms,
-                                                                  stats.init_ms,
-                                                                  stats.reasoning_ms))
                 logger.indent_level -= 1
                 csv_writer.writerow(csv_row)
 
             logger.indent_level -= 1
             logger.log('')
+
+
+class AbductionContractionTimeTest(AbductionContractionPerformanceTest):
+    """Abduction/contraction time test."""
+
+    @property
+    def name(self):
+        return 'abduction/contraction time'
+
+    @property
+    def result_fields(self):
+        return ['resource parsing', 'request parsing', 'reasoner init', 'reasoning']
+
+    def run_reasoner(self, reasoner, resource, request, logger):
+
+        stats = reasoner.abduction_contraction(resource, request,
+                                               timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT,
+                                               mode=TestMode.TIME)
+
+        logger.log(('Resource parsing {:.0f} ms | '
+                    'Request parsing {:.0f} ms | '
+                    'Reasoner init {:.0f} ms | '
+                    'Reasoning {:.0f} ms').format(stats.resource_parsing_ms,
+                                                  stats.request_parsing_ms,
+                                                  stats.init_ms,
+                                                  stats.reasoning_ms))
+
+        return [stats.resource_parsing_ms, stats.request_parsing_ms, stats.init_ms, stats.reasoning_ms]
+
+
+class AbductionContractionMemoryTest(AbductionContractionPerformanceTest):
+    """Abduction/contraction memory test."""
+
+    @property
+    def name(self):
+        return 'abduction/contraction memory'
+
+    @property
+    def result_fields(self):
+        return ['memory']
+
+    def run_reasoner(self, reasoner, resource, request, logger):
+
+        stats = reasoner.abduction_contraction(resource, request,
+                                               timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT,
+                                               mode=TestMode.MEMORY)
+
+        logger.log('Max memory: {}'.format(fileutils.human_readable_bytes(stats.max_memory)))
+
+        return [stats.max_memory]

@@ -6,6 +6,7 @@ from src import config
 from src.reasoners.owl import OWLOntology, OWLSyntax
 from src.utils import echo, exc, fileutils
 from src.utils.logger import Logger
+from src.utils.proc import WatchdogException
 
 
 class Test(object):
@@ -18,20 +19,20 @@ class Test(object):
         pass
 
     @abstractmethod
-    def run(self, onto_name, ontologies, logger, csv_writer):
-        """Runs test over a single ontology.
+    def setup(self, logger, csv_writer):
+        """Called before the test starts iterating on ontologies.
 
-        :param str onto_name : File name of the ontology.
-        :param dict[str, OWLOntology] ontologies : Ontologies by syntax.
         :param Logger logger : Logger instance.
         :param csv.writer csv_writer : CSV writer instance.
         """
         pass
 
     @abstractmethod
-    def setup(self, logger, csv_writer):
-        """Called before the test starts iterating on ontologies.
+    def run(self, onto_name, ontologies, logger, csv_writer):
+        """Runs test over a single ontology.
 
+        :param str onto_name : File name of the ontology.
+        :param dict[str, OWLOntology] ontologies : Ontologies by syntax.
         :param Logger logger : Logger instance.
         :param csv.writer csv_writer : CSV writer instance.
         """
@@ -127,3 +128,105 @@ class Test(object):
                         logger.indent_level -= 1
 
                     logger.log('')
+
+
+# noinspection PyTypeChecker
+class StandardPerformanceTest(Test):
+    """Abstract test class for measuring the performance of standard reasoning tasks."""
+    __metaclass__ = ABCMeta
+
+    @abstractproperty
+    def result_fields(self):
+        """:rtype : list[str]"""
+        pass
+
+    @abstractmethod
+    def run_reasoner(self, reasoner, ontology, logger):
+        """Called every run, for each reasoner and each ontology.
+
+        :param Reasoner reasoner : The reasoner.
+        :param Ontology ontology : The ontology.
+        :param Logger logger : Logger instance.
+        :rtype : list[str]
+        :return : Values for the CSV result fields.
+        """
+        pass
+
+    def __init__(self, datasets=None, reasoners=None, all_syntaxes=False, iterations=1):
+        """
+        :param list[str] datasets : If specified, limit the tests to the specified datasets.
+        :param list[str] reasoners : If specified, limit the tests to the specified reasoners.
+        :param bool all_syntaxes : If true, the test is run on all supported syntaxes.
+        :param int iterations : Number of iterations per ontology.
+        """
+        Test.__init__(self, datasets, reasoners, all_syntaxes)
+        self.iterations = iterations
+
+    def setup(self, logger, csv_writer):
+        del logger  # Unused
+        csv_header = ['Ontology']
+
+        for reasoner in self._reasoners:
+            for syntax in reasoner.supported_syntaxes if self._all_syntaxes else [reasoner.preferred_syntax]:
+                for field in self.result_fields:
+                    csv_header.append('{} {} {}'.format(reasoner.name, syntax, field))
+
+        csv_writer.writerow(csv_header)
+
+    def run(self, onto_name, ontologies, logger, csv_writer):
+
+        fail = {syntax: [] for syntax in OWLSyntax.ALL}
+
+        for iteration in xrange(self.iterations):
+            logger.log('Run {}:'.format(iteration + 1), color=echo.Color.YELLOW)
+            logger.indent_level += 1
+
+            csv_row = [onto_name]
+
+            for reasoner in self._reasoners:
+                logger.log('- {}:'.format(reasoner.name))
+                logger.indent_level += 1
+
+                syntaxes = reasoner.supported_syntaxes if self._all_syntaxes else [reasoner.preferred_syntax]
+
+                for syntax in syntaxes:
+                    # Skip already failed or timed out.
+                    if reasoner.name in fail[syntax]:
+                        csv_row.extend(['skip'] * len(self.result_fields))
+                        logger.log('{}: skip'.format(syntax))
+                        continue
+
+                    ontology = ontologies[syntax]
+
+                    try:
+                        csv_row.extend(self.run_reasoner(reasoner, ontology, logger))
+                    except WatchdogException:
+                        csv_row.extend(['timeout'] * len(self.result_fields))
+                        logger.log('{}: timeout'.format(syntax))
+                        fail[syntax].append(reasoner.name)
+                    except Exception:
+                        csv_row.extend(['error'] * len(self.result_fields))
+                        logger.log('{}: error'.format(syntax))
+                        fail[syntax].append(reasoner.name)
+
+                logger.indent_level -= 1
+
+            logger.indent_level -= 1
+            logger.log('')
+            csv_writer.writerow(csv_row)
+
+
+class NotImplementedTest(Test):
+    """Not implemented test."""
+
+    @property
+    def name(self):
+        return 'not implemented'
+
+    def setup(self, logger, csv_writer):
+        del logger, csv_writer  # Unused
+        raise NotImplementedError('Not implemented.')
+
+    def run(self, onto_name, ontologies, logger, csv_writer):
+        del onto_name, ontologies, logger, csv_writer  # Unused
+        pass
