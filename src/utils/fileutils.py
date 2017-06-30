@@ -36,6 +36,20 @@ def create_dir(path):
             raise
 
 
+def human_readable_bytes(n_bytes):
+    """Returns the human readable size for the specified bytes.
+
+    :param long n_bytes : Size in bytes.
+    :rtype : str
+    :return : Human readable size.
+    """
+    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+        if abs(n_bytes) < 1024.0:
+            return '{:3.1f} {}B'.format(n_bytes, unit)
+        n_bytes /= 1024.0
+    return '{:.1f} {}B'.format(n_bytes, 'Yi')
+
+
 def human_readable_size(path):
     """Returns the human readable size for the file at the specified path.
 
@@ -43,12 +57,7 @@ def human_readable_size(path):
     :rtype : str
     :return : Human readable file size.
     """
-    num = os.path.getsize(path)
-    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
-        if abs(num) < 1024.0:
-            return '{:3.1f} {}B'.format(num, unit)
-        num /= 1024.0
-    return '{:.1f} {}B'.format(num, 'Yi')
+    return human_readable_bytes(os.path.getsize(path))
 
 
 def remove(path):
