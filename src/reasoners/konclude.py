@@ -1,8 +1,8 @@
 import re
 import os
 
-from owl import ConsistencyResults, OWLReasoner, OWLSyntax, ReasoningStats
-from src.utils import exc, fileutils, jar, proc
+from owl import ConsistencyResults, OWLReasoner, OWLSyntax, ReasoningStats, TestMode
+from src.utils import bench, exc, fileutils, jar, proc
 
 
 class Konclude(OWLReasoner):
@@ -35,13 +35,13 @@ class Konclude(OWLReasoner):
     def preferred_syntax(self):
         return OWLSyntax.FUNCTIONAL
 
-    def classify(self, input_file, output_file=None, timeout=None):
+    def classify(self, input_file, output_file=None, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(input_file, file_type='file')
 
         args = [self._path, 'classification', '-i', input_file]
         classification_out = None
 
-        if output_file:
+        if mode == TestMode.CORRECTNESS:
             classification_out = os.path.splitext(output_file)[0] + '.owl'
 
             fileutils.remove(output_file)
@@ -51,77 +51,84 @@ class Konclude(OWLReasoner):
 
         args.append('-v')
 
-        call_result = proc.call(args, output_action=proc.OutputAction.RETURN, timeout=timeout)
+        if mode == TestMode.MEMORY:
+            result = bench.benchmark(args, timeout=timeout)
+        else:
+            result = proc.call(args, timeout=timeout)
 
-        if output_file:
+        if mode == TestMode.CORRECTNESS:
             args = ['print-tbox', '-o', output_file, classification_out]
             jar.call(self.__owl_tool_path,
                      args=args,
                      vm_opts=self.__vm_opts,
                      output_action=proc.OutputAction.DISCARD)
 
-        return self.__extract_classification_stats(call_result.stdout)
+        return self.__extract_classification_stats(result)
 
-    def consistency(self, input_file, timeout=None):
+    def consistency(self, input_file, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(input_file, file_type='file')
 
         args = [self._path, 'consistency', '-i', input_file, '-v']
-        call_result = proc.call(args, output_action=proc.OutputAction.RETURN, timeout=timeout)
 
-        return self.__extract_consistency_results(call_result.stdout)
+        if mode == TestMode.MEMORY:
+            result = bench.benchmark(args, timeout=timeout)
+        else:
+            result = proc.call(args, timeout=timeout)
 
-    def abduction_contraction(self, resource_file, request_file, timeout=None):
+        return self.__extract_consistency_results(result)
+
+    def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
         raise NotImplementedError
 
     # Private methods
 
-    def __extract_stats(self, stdout):
-        """Extract stats for a reasoning task by parsing stdout.
+    def __extract_stats(self, result):
+        """Extract stats for a reasoning task.
 
-        :param str stdout : stdout.
+        :param proc.CallResult result : CallResult instance.
         :rtype : Stats
-        :return : Reasoning task stats.
         """
+        stdout = result.stdout
         exc.raise_if_falsy(stdout=stdout)
 
-        result = re.search(r'>> Ontology parsed in (.*) ms\.', stdout)
-        exc.raise_if_falsy(result=result)
-        parsing_ms = float(result.group(1))
+        res = re.search(r'>> Ontology parsed in (.*) ms\.', stdout)
+        exc.raise_if_falsy(res=res)
+        parsing_ms = float(res.group(1))
 
-        result = re.search(r'Total processing time: (.*) ms\.', stdout)
-        exc.raise_if_falsy(result=result)
-        total_ms = float(result.group(1))
+        res = re.search(r'Total processing time: (.*) ms\.', stdout)
+        exc.raise_if_falsy(res=res)
+        total_ms = float(res.group(1))
 
-        return ReasoningStats(parsing_ms=parsing_ms, reasoning_ms=(total_ms - parsing_ms))
+        max_memory = result.max_memory if isinstance(result, bench.BenchResult) else 0
 
-    def __extract_classification_stats(self, stdout):
-        """Extract stats for the classification task by parsing stdout.
+        return ReasoningStats(parsing_ms=parsing_ms, reasoning_ms=(total_ms - parsing_ms), max_memory=max_memory)
 
-        :param str stdout : stdout.
+    def __extract_classification_stats(self, result):
+        """Extract stats for the classification task.
+
+        :param proc.CallResult result : CallResult instance.
         :rtype : Stats
-        :return : Reasoning task stats.
         """
-        stats = self.__extract_stats(stdout)
+        stats = self.__extract_stats(result)
 
-        result = re.search(r'Query \'UnnamedWriteClassHierarchyQuery\' processed in \'(.*)\' ms\.', stdout)
+        res = re.search(r'Query \'UnnamedWriteClassHierarchyQuery\' processed in \'(.*)\' ms\.', result.stdout)
 
-        if result:
-            write_ms = float(result.group(1))
+        if res:
+            write_ms = float(res.group(1))
             stats.reasoning_ms -= write_ms
 
         return stats
 
-    def __extract_consistency_results(self, stdout):
-        """Extract the result of the consistency task by parsing stdout.
+    def __extract_consistency_results(self, result):
+        """Extract the result of the consistency task.
 
-        :param str stdout : stdout.
+        :param proc.CallResult result : CallResult instance.
         :rtype : ConsistencyResults
-        :return : Consistency task results.
         """
-        stats = self.__extract_stats(stdout)
+        stats = self.__extract_stats(result)
 
-        result = re.search(r'Ontology \'.*\' is (.*)\.', stdout)
-        exc.raise_if_falsy(result=result)
-        consistent = (result.group(1) == 'consistent')
+        res = re.search(r'Ontology \'.*\' is (.*)\.', result.stdout)
+        exc.raise_if_falsy(res=res)
+        consistent = (res.group(1) == 'consistent')
 
         return ConsistencyResults(consistent, stats)

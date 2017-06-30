@@ -4,6 +4,15 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from src.utils import exc, fileutils
 
 
+class TestMode(object):
+    """Test mode pseudo-enum."""
+    CORRECTNESS = 'correctness'
+    TIME = 'time'
+    MEMORY = 'memory'
+
+    ALL = [CORRECTNESS, TIME, MEMORY]
+
+
 class OWLReasoner(object):
     """Abstract reasoner interface."""
     __metaclass__ = ABCMeta
@@ -33,36 +42,38 @@ class OWLReasoner(object):
         self._path = path
 
     @abstractmethod
-    def classify(self, input_file, output_file=None, timeout=None):
+    def classify(self, input_file, output_file=None, timeout=None, mode=TestMode.CORRECTNESS):
         """Performs the classification reasoning task.
 
         :param str input_file : Path of the input ontology.
         :param str output_file : Path of the output file.
         :param float timeout : Timeout (s).
+        :param str mode : Test mode.
         :rtype : Stats
         :return : Stats for the classification task.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def consistency(self, input_file, timeout=None):
+    def consistency(self, input_file, timeout=None, mode=TestMode.CORRECTNESS):
         """Checks if the given ontology is consistent.
 
         :param str input_file : Path of the input ontology.
         :param float timeout : Timeout (s).
-        :param float timeout : Timeout (s).
+        :param str mode : Test mode.
         :rtype : ConsistencyResults
         :return Results for the consistency task.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def abduction_contraction(self, resource_file, request_file, timeout=None):
+    def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
         """Performs abductions or contractions between all resource and request individuals.
 
         :param str resource_file : Path of the resource ontology.
         :param str request_file : Path of the request ontology.
         :param float timeout : Timeout (s).
+        :param str mode : Test mode.
         :rtype : AbductionContractionResults
         :return : Results for the reasoning task.
         """
@@ -107,13 +118,15 @@ class OWLSyntax(object):
 class ReasoningStats(object):
     """Contains stats about a reasoning task."""
 
-    def __init__(self, parsing_ms=0.0, reasoning_ms=0.0):
+    def __init__(self, parsing_ms=0.0, reasoning_ms=0.0, max_memory=0):
         """
         :param float parsing_ms : Parsing time in ms.
         :param float reasoning_ms : Reasoning time in ms.
+        :param long max_memory : The maximum used RAM (B).
         """
         self.parsing_ms = parsing_ms
         self.reasoning_ms = reasoning_ms
+        self.max_memory = max_memory
 
 
 class ConsistencyResults(object):
@@ -130,14 +143,16 @@ class ConsistencyResults(object):
 class AbductionContractionResults(object):
     """Contains results for the abduction-contraction task."""
 
-    def __init__(self, resource_parsing_ms=0.0, request_parsing_ms=0.0, init_ms=0.0, reasoning_ms=0.0):
+    def __init__(self, resource_parsing_ms=0.0, request_parsing_ms=0.0, init_ms=0.0, reasoning_ms=0.0, max_memory=0):
         """
         :param float resource_parsing_ms : Resource parsing time in ms.
         :param float request_parsing_ms : Request parsing time in ms.
         :param float init_ms : Reasoner init time in ms.
         :param float reasoning_ms : Reasoning time in ms.
+        :param long max_memory : The maximum used RAM (B).
         """
         self.resource_parsing_ms = resource_parsing_ms
         self.request_parsing_ms = request_parsing_ms
         self.init_ms = init_ms
         self.reasoning_ms = reasoning_ms
+        self.max_memory = max_memory

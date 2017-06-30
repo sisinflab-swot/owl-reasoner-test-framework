@@ -1,18 +1,11 @@
 import argparse
 
 import config
+from reasoners.owl import TestMode
 from tests.abduction_contraction import AbductionContractionTimeTest
-from tests.classification import ClassificationCorrectnessTest, ClassificationTimeTest
+from tests.classification import ClassificationCorrectnessTest, ClassificationTimeTest, ClassificationMemoryTest
 from tests.consistency import ConsistencyCorrectnessTest, ConsistencyTimeTest
 from tests.info import InfoTest
-
-
-class TestModes(object):
-    """Test mode namespace."""
-    CORRECTNESS = 'correctness'
-    TIME = 'time'
-
-    ALL = [CORRECTNESS, TIME]
 
 
 # Subcommands
@@ -29,8 +22,9 @@ def abduction_contraction_sub(args):
 def classification_sub(args):
     """:rtype : int"""
     {
-        TestModes.CORRECTNESS: ClassificationCorrectnessTest(args.datasets, args.reasoners),
-        TestModes.TIME: ClassificationTimeTest(args.datasets, args.reasoners, args.all_syntaxes)
+        TestMode.CORRECTNESS: ClassificationCorrectnessTest(args.datasets, args.reasoners),
+        TestMode.TIME: ClassificationTimeTest(args.datasets, args.reasoners, args.all_syntaxes),
+        TestMode.MEMORY: ClassificationMemoryTest(args.datasets, args.reasoners, args.all_syntaxes)
     }[args.mode].start(args.resume_after)
     return 0
 
@@ -38,8 +32,8 @@ def classification_sub(args):
 def consistency_sub(args):
     """:rtype : int"""
     {
-        TestModes.CORRECTNESS: ConsistencyCorrectnessTest(args.datasets, args.reasoners),
-        TestModes.TIME: ConsistencyTimeTest(args.datasets, args.reasoners, args.all_syntaxes)
+        TestMode.CORRECTNESS: ConsistencyCorrectnessTest(args.datasets, args.reasoners),
+        TestMode.TIME: ConsistencyTimeTest(args.datasets, args.reasoners, args.all_syntaxes)
     }[args.mode].start(args.resume_after)
     return 0
 
@@ -74,8 +68,8 @@ def build_parser():
 
     group = mode_parser.add_argument_group('Mode')
     group.add_argument('-m', '--mode',
-                       choices=TestModes.ALL,
-                       default=TestModes.ALL[0],
+                       choices=TestMode.ALL,
+                       default=TestMode.ALL[0],
                        help='Test mode.')
 
     # Configuration parser

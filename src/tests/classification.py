@@ -2,7 +2,7 @@ import filecmp
 import os
 
 from src import config
-from src.reasoners.owl import OWLSyntax
+from src.reasoners.owl import OWLSyntax, TestMode
 from src.utils import echo, fileutils
 from src.utils.proc import WatchdogException
 from test import Test
@@ -119,7 +119,8 @@ class ClassificationTimeTest(Test):
 
                     try:
                         stats = reasoner.classify(ontology.path,
-                                                  timeout=config.Reasoners.CLASSIFICATION_TIMEOUT)
+                                                  timeout=config.Reasoners.CLASSIFICATION_TIMEOUT,
+                                                  mode=TestMode.TIME)
                     except WatchdogException:
                         csv_row.extend(['timeout', 'timeout'])
                         logger.log('{}: timeout'.format(syntax))
@@ -133,6 +134,73 @@ class ClassificationTimeTest(Test):
                         logger.log('{}: Parsing {:.0f} ms | Classification {:.0f} ms'.format(syntax,
                                                                                              stats.parsing_ms,
                                                                                              stats.reasoning_ms))
+                logger.indent_level -= 1
+
+            logger.indent_level -= 1
+            logger.log('')
+            csv_writer.writerow(csv_row)
+
+
+class ClassificationMemoryTest(Test):
+    """Classification memory test."""
+
+    @property
+    def name(self):
+        return 'classification memory'
+
+    def setup(self, logger, csv_writer):
+        del logger  # Unused
+
+        columns = ['Ontology']
+
+        for reasoner in self._reasoners:
+            for syntax in reasoner.supported_syntaxes if self._all_syntaxes else [reasoner.preferred_syntax]:
+                columns.append('{} {}'.format(reasoner.name, syntax))
+
+        csv_writer.writerow(columns)
+
+    # noinspection PyBroadException
+    def run(self, onto_name, ontologies, logger, csv_writer):
+
+        fail = {syntax: [] for syntax in OWLSyntax.ALL}
+
+        for iteration in xrange(config.Reasoners.CLASSIFICATION_ITERATIONS):
+            logger.log('Run {}:'.format(iteration + 1), color=echo.Color.YELLOW)
+            logger.indent_level += 1
+
+            csv_row = [onto_name]
+
+            for reasoner in self._reasoners:
+                logger.log('- {}:'.format(reasoner.name))
+                logger.indent_level += 1
+
+                syntaxes = reasoner.supported_syntaxes if self._all_syntaxes else [reasoner.preferred_syntax]
+
+                for syntax in syntaxes:
+                    # Skip already failed or timed out.
+                    if reasoner.name in fail[syntax]:
+                        csv_row.extend(['skip'])
+                        logger.log('{}: skip'.format(syntax))
+                        continue
+
+                    ontology = ontologies[syntax]
+
+                    try:
+                        stats = reasoner.classify(ontology.path,
+                                                  timeout=config.Reasoners.CLASSIFICATION_TIMEOUT,
+                                                  mode=TestMode.MEMORY)
+                    except WatchdogException:
+                        csv_row.extend(['timeout'])
+                        logger.log('{}: timeout'.format(syntax))
+                        fail[syntax].append(reasoner.name)
+                    except Exception:
+                        csv_row.extend(['error'])
+                        logger.log('{}: error'.format(syntax))
+                        fail[syntax].append(reasoner.name)
+                    else:
+                        csv_row.extend([stats.max_memory])
+                        logger.log('{}: {}'.format(syntax, fileutils.human_readable_bytes(stats.max_memory)))
+
                 logger.indent_level -= 1
 
             logger.indent_level -= 1

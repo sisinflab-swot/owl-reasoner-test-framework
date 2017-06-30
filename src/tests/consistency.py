@@ -1,5 +1,5 @@
 from src import config
-from src.reasoners.owl import OWLSyntax
+from src.reasoners.owl import OWLSyntax, TestMode
 from src.utils import echo
 from src.utils.proc import WatchdogException
 from test import Test
@@ -96,7 +96,8 @@ class ConsistencyTimeTest(Test):
 
                     try:
                         results = reasoner.consistency(ontology.path,
-                                                       timeout=config.Reasoners.CONSISTENCY_TIMEOUT)
+                                                       timeout=config.Reasoners.CONSISTENCY_TIMEOUT,
+                                                       mode=TestMode.TIME)
                     except WatchdogException:
                         csv_row.extend(['timeout', 'timeout'])
                         logger.log('{}: timeout'.format(syntax))

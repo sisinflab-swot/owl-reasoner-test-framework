@@ -1,7 +1,7 @@
 import os
 
 from src import config
-from src.reasoners.owl import OWLSyntax
+from src.reasoners.owl import OWLSyntax, TestMode
 from src.utils import echo
 from src.utils.proc import WatchdogException
 from test import Test
@@ -56,7 +56,8 @@ class AbductionContractionTimeTest(Test):
                     logger.log('- {}: '.format(reasoner.name), endl=False)
                     try:
                         stats = reasoner.abduction_contraction(resource, request,
-                                                               timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT)
+                                                               timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT,
+                                                               mode=TestMode.TIME)
                     except WatchdogException:
                         csv_row.extend(['timeout', 'timeout', 'timeout', 'timeout'])
                         logger.log('timeout')

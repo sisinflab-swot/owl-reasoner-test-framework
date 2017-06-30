@@ -1,8 +1,8 @@
 import os
 
 import minime
-from owl import OWLReasoner, OWLSyntax
-from src.utils import exc, fileutils, jar, proc
+from owl import OWLReasoner, OWLSyntax, TestMode
+from src.utils import bench, exc, fileutils, jar, proc
 
 
 class JavaReasoner(OWLReasoner):
@@ -38,13 +38,13 @@ class JavaReasoner(OWLReasoner):
         self.__owl_tool_path = owl_tool_path
         self.__vm_opts = vm_opts
 
-    def classify(self, input_file, output_file=None, timeout=None):
+    def classify(self, input_file, output_file=None, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(input_file, file_type='file')
 
         args = ['classification']
         classification_out = None
 
-        if output_file:
+        if mode == TestMode.CORRECTNESS:
             classification_out = os.path.splitext(output_file)[0] + '.owl'
 
             fileutils.remove(output_file)
@@ -54,42 +54,47 @@ class JavaReasoner(OWLReasoner):
 
         args.append(input_file)
 
-        call_result = jar.call(self._path,
-                               args=args,
-                               vm_opts=self.__vm_opts,
-                               output_action=proc.OutputAction.RETURN,
-                               timeout=timeout)
+        if mode == TestMode.MEMORY:
+            vm_opts = ['-Xms1m'] + self.__vm_opts
+            args = jar.proc_args(jar=self._path, args=args, vm_opts=vm_opts)
+            result = bench.benchmark(args, timeout=timeout)
+        else:
+            result = jar.call(self._path, args=args, vm_opts=self.__vm_opts, timeout=timeout)
 
-        if output_file:
+        if mode == TestMode.CORRECTNESS:
             args = ['print-tbox', '-o', output_file, classification_out]
             jar.call(self.__owl_tool_path,
                      args=args,
                      vm_opts=self.__vm_opts,
                      output_action=proc.OutputAction.DISCARD)
 
-        return minime.extract_stats(call_result.stdout)
+        return minime.extract_stats(result)
 
-    def consistency(self, input_file, timeout=None):
+    def consistency(self, input_file, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(input_file, file_type='file')
 
         args = ['consistency', input_file]
-        call_result = jar.call(self._path,
-                               args=args,
-                               vm_opts=self.__vm_opts,
-                               output_action=proc.OutputAction.RETURN,
-                               timeout=timeout)
 
-        return minime.extract_consistency_results(call_result.stdout)
+        if mode == TestMode.MEMORY:
+            vm_opts = ['-Xms1m'] + self.__vm_opts
+            args = jar.proc_args(jar=self._path, args=args, vm_opts=vm_opts)
+            result = bench.benchmark(args, timeout=timeout)
+        else:
+            result = jar.call(self._path, args=args, vm_opts=self.__vm_opts, timeout=timeout)
 
-    def abduction_contraction(self, resource_file, request_file, timeout=None):
+        return minime.extract_consistency_results(result)
+
+    def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(resource_file, file_type='file')
         exc.raise_if_not_found(request_file, file_type='file')
 
         args = ['abduction-contraction', '-r', request_file, resource_file]
-        call_result = jar.call(self._path,
-                               args=args,
-                               vm_opts=self.__vm_opts,
-                               output_action=proc.OutputAction.RETURN,
-                               timeout=timeout)
 
-        return minime.extract_abduction_contraction_results(call_result.stdout)
+        if mode == TestMode.MEMORY:
+            vm_opts = ['-Xms1m'] + self.__vm_opts
+            args = jar.proc_args(jar=self._path, args=args, vm_opts=vm_opts)
+            result = bench.benchmark(args, timeout=timeout)
+        else:
+            result = jar.call(self._path, args=args, vm_opts=self.__vm_opts, timeout=timeout)
+
+        return minime.extract_abduction_contraction_results(result)
