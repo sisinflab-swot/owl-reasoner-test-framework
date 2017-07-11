@@ -50,7 +50,7 @@ class Test(object):
         if reasoners:
             self._reasoners = [config.Reasoners.BY_NAME[n] for n in reasoners]
         else:
-            self._reasoners = config.Reasoners.ALL
+            self._reasoners = config.Reasoners.ALL_DESKTOP
 
     def start(self, resume_ontology=None):
         """Starts the test.
@@ -204,7 +204,10 @@ class StandardPerformanceTest(Test):
                         csv_row.extend(['timeout'] * len(self.result_fields))
                         logger.log('{}: timeout'.format(syntax))
                         fail[syntax].append(reasoner.name)
-                    except Exception:
+                    except Exception as e:
+                        if config.debug:
+                            raise e
+
                         csv_row.extend(['error'] * len(self.result_fields))
                         logger.log('{}: error'.format(syntax))
                         fail[syntax].append(reasoner.name)

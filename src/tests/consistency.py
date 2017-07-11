@@ -93,3 +93,25 @@ class ConsistencyMemoryTest(StandardPerformanceTest):
         logger.log('{}: {}'.format(ontology.syntax, fileutils.human_readable_bytes(stats.max_memory)))
 
         return [stats.max_memory]
+
+
+class ConsistencyMobileTest(StandardPerformanceTest):
+    """Mobile consistency performance test."""
+
+    @property
+    def name(self):
+        return 'consistency mobile'
+
+    @property
+    def result_fields(self):
+        return ['parsing', 'consistency', 'memory']
+
+    def run_reasoner(self, reasoner, ontology, logger):
+
+        stats = reasoner.consistency(ontology.path, timeout=config.Reasoners.CONSISTENCY_TIMEOUT).stats
+        human_readable_memory = fileutils.human_readable_bytes(stats.max_memory)
+
+        logger.log('Parsing {:.0f} ms | Consistency {:.0f} ms | Memory {}'.format(stats.parsing_ms,
+                                                                                  stats.reasoning_ms,
+                                                                                  human_readable_memory))
+        return [stats.parsing_ms, stats.reasoning_ms, stats.max_memory]

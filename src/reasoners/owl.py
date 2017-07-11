@@ -9,8 +9,9 @@ class TestMode(object):
     CORRECTNESS = 'correctness'
     TIME = 'time'
     MEMORY = 'memory'
+    MOBILE = 'mobile'
 
-    ALL = [CORRECTNESS, TIME, MEMORY]
+    ALL = [CORRECTNESS, TIME, MEMORY, MOBILE]
 
 
 class OWLReasoner(object):

@@ -1,7 +1,8 @@
 import re
+from os import path
 
 from owl import AbductionContractionResults, ConsistencyResults, OWLReasoner, OWLSyntax, ReasoningStats, TestMode
-from src.utils import bench, exc, fileutils, proc
+from src.utils import bench, device, exc, fileutils, proc
 
 
 class MiniME(OWLReasoner):
@@ -63,6 +64,82 @@ class MiniME(OWLReasoner):
         return extract_abduction_contraction_results(result)
 
 
+class MiniMEMobile(OWLReasoner):
+    """MiniME mobile reasoner wrapper."""
+
+    # Lifecycle
+
+    def __init__(self, project, scheme, classification_test, consistency_test):
+        """
+        :param str project : Test Xcode project.
+        :param str scheme : Xcode project scheme.
+        :param str classification_test : Name of the classification test.
+        :param str consistency_test : Name of the consistency test.
+        """
+        exc.raise_if_not_found(project, file_type='dir')
+        exc.raise_if_falsy(scheme=scheme, classification_test=classification_test, consistency_test=consistency_test)
+
+        super(MiniMEMobile, self).__init__(path=proc.find_executable('xcodebuild'))
+        self._project = project
+        self._scheme = scheme
+        self._classification_test = classification_test
+        self._consistency_test = consistency_test
+
+    # Overrides
+
+    @property
+    def name(self):
+        return 'MiniME mobile'
+
+    @property
+    def supported_syntaxes(self):
+        return [OWLSyntax.RDFXML]
+
+    @property
+    def preferred_syntax(self):
+        return OWLSyntax.RDFXML
+
+    def classify(self, input_file, output_file=None, timeout=None, mode=TestMode.CORRECTNESS):
+        exc.raise_if_not_found(input_file, file_type='file')
+
+        args = self._args(test=self._classification_test, resource=input_file)
+        result = proc.call(args, timeout=timeout)
+        return extract_stats(result)
+
+    def consistency(self, input_file, timeout=None, mode=TestMode.CORRECTNESS):
+        exc.raise_if_not_found(input_file, file_type='file')
+
+        args = self._args(test=self._consistency_test, resource=input_file)
+        result = proc.call(args, timeout=timeout)
+        return extract_stats(result)
+
+    def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
+        pass
+
+    # Private
+
+    def _args(self, test, resource, request=None):
+        """Builds the xcodebuild args for the specified test.
+
+        :param str test : The test to run.
+        :param str resource : The resource ontology.
+        :param str request : The request ontology.
+        :rtype : list[str]
+        """
+        args = [self._path,
+                '-project', self._project,
+                '-scheme', self._scheme,
+                '-destination', 'platform=iOS,name={}'.format(device.detect_connected()),
+                '-only-testing:{}'.format(test),
+                'test-without-building',
+                'RESOURCE={}'.format(path.splitext(path.basename(resource))[0])]
+
+        if request:
+            args.append('REQUEST={}'.format(path.splitext(path.basename(request))[0]))
+
+        return args
+
+
 # Utility functions
 
 
@@ -83,7 +160,11 @@ def extract_stats(result):
     exc.raise_if_falsy(res=res)
     reasoning_ms = float(res.group(1))
 
-    max_memory = result.max_memory if isinstance(result, bench.BenchResult) else 0
+    if isinstance(result, bench.BenchResult):
+        max_memory = result.max_memory
+    else:
+        res = re.search(r'Memory: (.*) B', stdout)
+        max_memory = long(res.group(1)) if res else 0
 
     return ReasoningStats(parsing_ms=parsing_ms, reasoning_ms=reasoning_ms, max_memory=max_memory)
 

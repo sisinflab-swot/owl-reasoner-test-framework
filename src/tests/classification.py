@@ -115,3 +115,25 @@ class ClassificationMemoryTest(StandardPerformanceTest):
         logger.log('{}: {}'.format(ontology.syntax, fileutils.human_readable_bytes(stats.max_memory)))
 
         return [stats.max_memory]
+
+
+class ClassificationMobileTest(StandardPerformanceTest):
+    """Mobile classification performance test."""
+
+    @property
+    def name(self):
+        return 'classification mobile'
+
+    @property
+    def result_fields(self):
+        return ['parsing', 'classification', 'memory']
+
+    def run_reasoner(self, reasoner, ontology, logger):
+
+        stats = reasoner.classify(ontology.path, timeout=config.Reasoners.CLASSIFICATION_TIMEOUT)
+        human_readable_memory = fileutils.human_readable_bytes(stats.max_memory)
+
+        logger.log('Parsing {:.0f} ms | Classification {:.0f} ms | Memory {}'.format(stats.parsing_ms,
+                                                                                     stats.reasoning_ms,
+                                                                                     human_readable_memory))
+        return [stats.parsing_ms, stats.reasoning_ms, stats.max_memory]

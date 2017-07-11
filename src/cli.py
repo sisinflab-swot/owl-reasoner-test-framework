@@ -2,11 +2,28 @@ import argparse
 
 import config
 from reasoners.owl import TestMode
+
 from tests.test import NotImplementedTest
-from tests.abduction_contraction import AbductionContractionTimeTest, AbductionContractionMemoryTest
-from tests.classification import ClassificationCorrectnessTest, ClassificationTimeTest, ClassificationMemoryTest
-from tests.consistency import ConsistencyCorrectnessTest, ConsistencyTimeTest, ConsistencyMemoryTest
 from tests.info import InfoTest
+
+from tests.abduction_contraction import (
+    AbductionContractionTimeTest,
+    AbductionContractionMemoryTest
+)
+
+from tests.classification import (
+    ClassificationCorrectnessTest,
+    ClassificationTimeTest,
+    ClassificationMemoryTest,
+    ClassificationMobileTest
+)
+
+from tests.consistency import (
+    ConsistencyCorrectnessTest,
+    ConsistencyTimeTest,
+    ConsistencyMemoryTest,
+    ConsistencyMobileTest
+)
 
 
 # Subcommands
@@ -26,7 +43,9 @@ def abduction_contraction_sub(args):
 
         TestMode.MEMORY: AbductionContractionMemoryTest(datasets=datasets,
                                                         reasoners=reasoners,
-                                                        iterations=config.Reasoners.ABDUCTION_CONTRACTION_ITERATIONS)
+                                                        iterations=config.Reasoners.ABDUCTION_CONTRACTION_ITERATIONS),
+
+        TestMode.MOBILE: NotImplementedTest()
     }[args.mode].start(args.resume_after)
     return 0
 
@@ -45,6 +64,10 @@ def classification_sub(args):
         TestMode.MEMORY: ClassificationMemoryTest(datasets=args.datasets,
                                                   reasoners=args.reasoners,
                                                   all_syntaxes=args.all_syntaxes,
+                                                  iterations=config.Reasoners.CLASSIFICATION_ITERATIONS),
+
+        TestMode.MOBILE: ClassificationMobileTest(datasets=args.datasets,
+                                                  reasoners=[config.Reasoners.MINIME_MOBILE.name],
                                                   iterations=config.Reasoners.CLASSIFICATION_ITERATIONS)
     }[args.mode].start(args.resume_after)
     return 0
@@ -64,6 +87,10 @@ def consistency_sub(args):
         TestMode.MEMORY: ConsistencyMemoryTest(datasets=args.datasets,
                                                reasoners=args.reasoners,
                                                all_syntaxes=args.all_syntaxes,
+                                               iterations=config.Reasoners.CONSISTENCY_ITERATIONS),
+
+        TestMode.MOBILE: ConsistencyMobileTest(datasets=args.datasets,
+                                               reasoners=[config.Reasoners.MINIME_MOBILE.name],
                                                iterations=config.Reasoners.CONSISTENCY_ITERATIONS)
     }[args.mode].start(args.resume_after)
     return 0
