@@ -111,7 +111,7 @@ class MiniMEMobile(OWLReasoner):
 
         args = self._args(test=self._consistency_test, resource=input_file)
         result = proc.call(args, timeout=timeout)
-        return extract_stats(result)
+        return ConsistencyResults(consistent=True, stats=extract_stats(result))
 
     def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
         pass
