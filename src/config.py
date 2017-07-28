@@ -38,6 +38,7 @@ class Mobile(object):
     TEST_SCHEME = 'MiniME-mobileTests'
     CLASSIFICATION_TEST = '{}/MiniME_mobileTests/testClassification'.format(TEST_SCHEME)
     CONSISTENCY_TEST = '{}/MiniME_mobileTests/testConsistency'.format(TEST_SCHEME)
+    ABDUCTION_CONTRACTION_TEST = '{}/MiniME_mobileTests/testAbductionContraction'.format(TEST_SCHEME)
 
 
 class Reasoners(object):
@@ -71,7 +72,8 @@ class Reasoners(object):
     MINIME_MOBILE = MiniMEMobile(project=Paths.XCODE_PROJECT,
                                  scheme=Mobile.SCHEME,
                                  classification_test=Mobile.CLASSIFICATION_TEST,
-                                 consistency_test=Mobile.CONSISTENCY_TEST)
+                                 consistency_test=Mobile.CONSISTENCY_TEST,
+                                 abduction_contraction_test=Mobile.ABDUCTION_CONTRACTION_TEST)
 
     MINIME_JAVA = JavaReasoner(name='MiniME Java',
                                path=Paths.MINIME_JAVA,

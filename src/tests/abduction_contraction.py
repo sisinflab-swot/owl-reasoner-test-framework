@@ -140,3 +140,36 @@ class AbductionContractionMemoryTest(AbductionContractionPerformanceTest):
         logger.log('Max memory: {}'.format(fileutils.human_readable_bytes(stats.max_memory)))
 
         return [stats.max_memory]
+
+
+class AbductionContractionMobileTest(AbductionContractionPerformanceTest):
+    """Mobile abduction/contraction test."""
+
+    @property
+    def name(self):
+        return 'abduction/contraction mobile'
+
+    @property
+    def result_fields(self):
+        return ['resource parsing', 'request parsing', 'reasoner init', 'reasoning', 'memory']
+
+    def run_reasoner(self, reasoner, resource, request, logger):
+
+        stats = reasoner.abduction_contraction(resource, request,
+                                               timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT)
+
+        logger.log(('Resource parsing {:.0f} ms | '
+                    'Request parsing {:.0f} ms | '
+                    'Reasoner init {:.0f} ms | '
+                    'Reasoning {:.0f} ms | '
+                    'Max memory: {}').format(stats.resource_parsing_ms,
+                                             stats.request_parsing_ms,
+                                             stats.init_ms,
+                                             stats.reasoning_ms,
+                                             fileutils.human_readable_bytes(stats.max_memory)))
+
+        return [stats.resource_parsing_ms,
+                stats.request_parsing_ms,
+                stats.init_ms,
+                stats.reasoning_ms,
+                stats.max_memory]

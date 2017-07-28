@@ -45,38 +45,102 @@ class MiniME_mobileTests: XCTestCase {
         }
     }
     
+    func testAbductionContraction() {
+        
+        let resourceUrl = ontologyUrl(forEnvVar: "RESOURCE")!
+        let requestUrl = ontologyUrl(forEnvVar: "REQUEST")!
+        
+        let resourceName = resourceUrl.deletingPathExtension().lastPathComponent
+        let requestName = requestUrl.deletingPathExtension().lastPathComponent
+        
+        Logger.stdOut.log("Computing semantic match between resource \"\(resourceName)\" and request \"\(requestName)\"")
+        
+        autoreleasepool {
+            
+            let resource = loadOntology(atUrl: resourceUrl, printTitle: "Resource parsing")
+            let request = loadOntology(atUrl: requestUrl, printTitle: "Request parsing")
+            
+            var start = mach_absolute_time()
+            let reasoner = MicroReasoner(ontology: resource)
+            var end = mach_absolute_time()
+            
+            Logger.stdOut.logMillis(between: start, and: end, title: "Reasoner initialization")
+            
+            start = mach_absolute_time()
+            
+            let resourceIndividuals = reasoner.resourceIndividuals.values
+            let requestIndividuals = reasoner.loadRequest(from: request).values
+            
+            for resourceIndividual in resourceIndividuals {
+                for requestIndividual in requestIndividuals {
+                    
+                    let resourceIri = resourceIndividual.iri
+                    var requestIri = requestIndividual.iri
+                    
+                    if let compatible = reasoner.compatibility(betweenResource: resourceIri, andRequest: requestIri) {
+                        
+                        if !compatible, let contraction = reasoner.contraction(withResource: resourceIri, forRequest: requestIri) {
+                            requestIri = OWLIRI(string: requestIri.string + "_compatible_" + resourceIri.string)
+                            reasoner.loadRequest(individual: Item(name: requestIri, description: contraction.keep))
+                        }
+                        
+                        _ = reasoner.abduction(withResource: resourceIri, forRequest: requestIri)
+                    }
+                }
+            }
+            
+            end = mach_absolute_time()
+            
+            Logger.stdOut.logMillis(between: start, and: end, title: "Reasoning")
+            logMaxMemory()
+        }
+    }
+    
     // MARK: Private methods
+    
+    private func loadOntology(atUrl url: URL, printTitle: String) -> OWLOntology {
+        let start = mach_absolute_time()
+        let ontology = try! OWLManager.createOWLOntologyManager().loadOntologyFromDocument(at: url)
+        let end = mach_absolute_time()
+        
+        Logger.stdOut.logMillis(between: start, and: end, title: printTitle)
+        return ontology
+    }
+    
+    private func logMaxMemory() {
+        var usage = rusage()
+        getrusage(RUSAGE_SELF, &usage)
+        
+        Logger.stdOut.log("Memory: \(usage.ru_maxrss) B")
+    }
+    
+    private func ontologyUrl(forEnvVar envVar: String) -> URL! {
+        
+        guard let resourceName = ProcessInfo.processInfo.environment[envVar] else {
+            XCTFail("Environment variable \"\(envVar)\" not set.")
+            return nil
+        }
+        
+        guard let resource = Bundle(for: type(of: self)).url(forResource: resourceName, withExtension: "owl") else {
+            XCTFail("No ontology named \"\(resourceName)\".")
+            return nil
+        }
+        
+        return resource
+    }
     
     private func standardTest(withName name: String, handler: (OWLOntology) -> (start: UInt64, end: UInt64)) {
         
-        guard let resourceName = ProcessInfo.processInfo.environment["RESOURCE"] else {
-            XCTFail("No resource specified for the classification task.")
-            return
-        }
-        
-        Logger.stdOut.log("Computing \(name) for \"\(resourceName)\"")
-        
-        guard let resource = Bundle(for: type(of: self)).url(forResource: resourceName, withExtension: "owl") else {
-            XCTFail("No resource named \"\(resourceName)\".")
-            return
-        }
+        let resource = ontologyUrl(forEnvVar: "RESOURCE")!
+        Logger.stdOut.log("Computing \(name) for \"\(resource.deletingPathExtension().lastPathComponent)\"")
         
         autoreleasepool {
-            let manager = OWLManager.createOWLOntologyManager()
-            
-            let start = mach_absolute_time()
-            let ontology = try! manager.loadOntologyFromDocument(at: resource)
-            let end = mach_absolute_time()
-            
-            Logger.stdOut.logMillis(between: start, and: end, title: "Parsing")
+            let ontology = loadOntology(atUrl: resource, printTitle: "Parsing")
             
             let stats = handler(ontology)
             Logger.stdOut.logMillis(between: stats.start, and: stats.end, title: "Reasoning")
             
-            var usage = rusage()
-            getrusage(RUSAGE_SELF, &usage)
-            
-            Logger.stdOut.log("Memory: \(usage.ru_maxrss) B")
+            logMaxMemory()
         }
     }
 }

@@ -69,12 +69,13 @@ class MiniMEMobile(OWLReasoner):
 
     # Lifecycle
 
-    def __init__(self, project, scheme, classification_test, consistency_test):
+    def __init__(self, project, scheme, classification_test, consistency_test, abduction_contraction_test):
         """
         :param str project : Test Xcode project.
         :param str scheme : Xcode project scheme.
         :param str classification_test : Name of the classification test.
         :param str consistency_test : Name of the consistency test.
+        :param str abduction_contraction_test : Name of the abduction/contraction test.
         """
         exc.raise_if_not_found(project, file_type='dir')
         exc.raise_if_falsy(scheme=scheme, classification_test=classification_test, consistency_test=consistency_test)
@@ -84,6 +85,7 @@ class MiniMEMobile(OWLReasoner):
         self._scheme = scheme
         self._classification_test = classification_test
         self._consistency_test = consistency_test
+        self._abduction_contraction_test = abduction_contraction_test
 
     # Overrides
 
@@ -114,7 +116,12 @@ class MiniMEMobile(OWLReasoner):
         return ConsistencyResults(consistent=True, stats=extract_stats(result))
 
     def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
-        pass
+        exc.raise_if_not_found(resource_file, file_type='file')
+        exc.raise_if_not_found(request_file, file_type='file')
+
+        args = self._args(test=self._abduction_contraction_test, resource=resource_file, request=request_file)
+        result = proc.call(args, timeout=timeout)
+        return extract_abduction_contraction_results(result)
 
     # Private
 
@@ -143,6 +150,21 @@ class MiniMEMobile(OWLReasoner):
 # Utility functions
 
 
+def extract_memory(result):
+    """Extracts the peak memory for a reasoning task.
+
+    :param proc.CallResult result : CallResult instance.
+    :rtype : long
+    """
+    if isinstance(result, bench.BenchResult):
+        max_memory = result.max_memory
+    else:
+        res = re.search(r'Memory: (.*) B', result.stdout)
+        max_memory = long(res.group(1)) if res else 0
+
+    return max_memory
+
+
 def extract_stats(result):
     """Extract stats for a reasoning task.
 
@@ -160,11 +182,7 @@ def extract_stats(result):
     exc.raise_if_falsy(res=res)
     reasoning_ms = float(res.group(1))
 
-    if isinstance(result, bench.BenchResult):
-        max_memory = result.max_memory
-    else:
-        res = re.search(r'Memory: (.*) B', stdout)
-        max_memory = long(res.group(1)) if res else 0
+    max_memory = extract_memory(result)
 
     return ReasoningStats(parsing_ms=parsing_ms, reasoning_ms=reasoning_ms, max_memory=max_memory)
 
@@ -209,7 +227,7 @@ def extract_abduction_contraction_results(result):
     exc.raise_if_falsy(res=res)
     reasoning_ms = float(res.group(1))
 
-    max_memory = result.max_memory if isinstance(result, bench.BenchResult) else 0
+    max_memory = extract_memory(result)
 
     return AbductionContractionResults(resource_parsing_ms=res_parsing_ms,
                                        request_parsing_ms=req_parsing_ms,

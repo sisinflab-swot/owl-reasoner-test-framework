@@ -8,7 +8,8 @@ from tests.info import InfoTest
 
 from tests.abduction_contraction import (
     AbductionContractionTimeTest,
-    AbductionContractionMemoryTest
+    AbductionContractionMemoryTest,
+    AbductionContractionMobileTest
 )
 
 from tests.classification import (
@@ -45,7 +46,9 @@ def abduction_contraction_sub(args):
                                                         reasoners=reasoners,
                                                         iterations=config.Reasoners.ABDUCTION_CONTRACTION_ITERATIONS),
 
-        TestMode.MOBILE: NotImplementedTest()
+        TestMode.MOBILE: AbductionContractionMobileTest(datasets=datasets,
+                                                        reasoners=[config.Reasoners.MINIME_MOBILE.name],
+                                                        iterations=config.Reasoners.ABDUCTION_CONTRACTION_ITERATIONS)
     }[args.mode].start(args.resume_after)
     return 0
 
