@@ -1,0 +1,3 @@
+[submodule "src/pyutils"]
+	path = src/pyutils
+	url = git@github.com:IvanoBilenchi/pyutils.git

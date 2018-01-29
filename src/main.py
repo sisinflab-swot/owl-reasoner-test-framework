@@ -1,30 +1,33 @@
 import sys
 
-import cli
-import config
-from utils import echo
+from . import cli, config
+from .pyutils import echo
 
 
 # Main
 
 
-def main():
-    """:rtype : int"""
-    parser = cli.build_parser()
-    args = parser.parse_args()
-    return args.func(args)
-
-
-if __name__ == '__main__':
+def main() -> int:
     try:
-        sys.exit(main())
+        parser = cli.build_parser()
+        args = parser.parse_args()
+
+        if not hasattr(args, 'func'):
+            raise ValueError('Invalid argument(s). Please run "test -h" or "test <subcommand> -h" for help.')
+
+        ret_val = args.func(args)
     except KeyboardInterrupt:
         echo.error('Interrupted by user.')
-        sys.exit(1)
+        ret_val = 1
     except Exception as e:
         if config.debug:
             raise
         else:
-            err_msg = e.message if e.message else str(e)
-            echo.error(err_msg)
-            sys.exit(1)
+            echo.error(str(e))
+            ret_val = 1
+
+    return ret_val
+
+
+if __name__ == '__main__':
+    sys.exit(main())

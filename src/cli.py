@@ -1,25 +1,25 @@
 import argparse
 
-import config
-from reasoners.owl import TestMode
+from . import config
+from .reasoners.owl import TestMode
 
-from tests.test import NotImplementedTest
-from tests.info import InfoTest
+from .tests.test import NotImplementedTest
+from .tests.info import InfoTest
 
-from tests.abduction_contraction import (
+from .tests.abduction_contraction import (
     AbductionContractionTimeTest,
     AbductionContractionMemoryTest,
     AbductionContractionMobileTest
 )
 
-from tests.classification import (
+from .tests.classification import (
     ClassificationCorrectnessTest,
     ClassificationTimeTest,
     ClassificationMemoryTest,
     ClassificationMobileTest
 )
 
-from tests.consistency import (
+from .tests.consistency import (
     ConsistencyCorrectnessTest,
     ConsistencyTimeTest,
     ConsistencyMemoryTest,
@@ -30,8 +30,7 @@ from tests.consistency import (
 # Subcommands
 
 
-def abduction_contraction_sub(args):
-    """:rtype : int"""
+def abduction_contraction_sub(args) -> int:
     datasets = args.datasets if args.datasets else ['sisinflab']
     reasoners = args.reasoners if args.reasoners else [r.name for r in config.Reasoners.NON_STANDARD]
 
@@ -53,8 +52,7 @@ def abduction_contraction_sub(args):
     return 0
 
 
-def classification_sub(args):
-    """:rtype : int"""
+def classification_sub(args) -> int:
     {
         TestMode.CORRECTNESS: ClassificationCorrectnessTest(datasets=args.datasets,
                                                             reasoners=args.reasoners),
@@ -76,8 +74,7 @@ def classification_sub(args):
     return 0
 
 
-def consistency_sub(args):
-    """:rtype : int"""
+def consistency_sub(args) -> int:
     {
         TestMode.CORRECTNESS: ConsistencyCorrectnessTest(datasets=args.datasets,
                                                          reasoners=args.reasoners),
@@ -99,8 +96,7 @@ def consistency_sub(args):
     return 0
 
 
-def info_sub(args):
-    """:rtype : int"""
+def info_sub(args) -> int:
     InfoTest(datasets=args.datasets,
              reasoners=args.reasoners).start(args.resume_after)
     return 0
@@ -109,11 +105,8 @@ def info_sub(args):
 # CLI parser
 
 
-def build_parser():
-    """Build and return the CLI parser.
-
-    :rtype : argparse.ArgumentParser
-    """
+def build_parser() -> argparse.ArgumentParser:
+    """Build and return the CLI parser."""
     # Help parser
     help_parser = argparse.ArgumentParser(add_help=False)
 

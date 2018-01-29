@@ -1,11 +1,11 @@
 import filecmp
 import os
+from subprocess import TimeoutExpired
 
 from src import config
 from src.reasoners.owl import TestMode
-from src.utils import echo, fileutils
-from src.utils.proc import WatchdogException
-from test import Test, StandardPerformanceTest
+from src.pyutils import echo, fileutils
+from .test import Test, StandardPerformanceTest
 
 
 class ClassificationCorrectnessTest(Test):
@@ -51,7 +51,7 @@ class ClassificationCorrectnessTest(Test):
                 reasoner.classify(ontologies[reasoner.preferred_syntax].path,
                                   output_file=reference_out,
                                   timeout=config.Reasoners.CLASSIFICATION_TIMEOUT)
-            except WatchdogException:
+            except TimeoutExpired:
                 result = 'timeout'
                 color = echo.Color.RED
             except Exception:

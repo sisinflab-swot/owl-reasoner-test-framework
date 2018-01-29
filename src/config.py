@@ -1,15 +1,15 @@
 import sys
 from os import path
 
-from reasoners.java import JavaReasoner
-from reasoners.konclude import Konclude
-from reasoners.minime import MiniME, MiniMEMobile
+from .reasoners.java import JavaReasoner
+from .reasoners.konclude import Konclude
+from .reasoners.minime import MiniME, MiniMEMobile
 
 
 debug = False
 
 
-class Paths(object):
+class Paths:
     """Paths config namespace."""
     DIR = path.dirname(path.dirname(path.realpath(sys.argv[0])))
     BIN_DIR = path.join(DIR, 'bin')
@@ -32,7 +32,7 @@ class Paths(object):
     XCODE_PROJECT = path.join(MOBILE_DIR, 'MiniME-mobile.xcodeproj')
 
 
-class Mobile(object):
+class Mobile:
     """Mobile tests config namespace."""
     SCHEME = 'MiniME-mobile'
     TEST_SCHEME = 'MiniME-mobileTests'
@@ -41,7 +41,7 @@ class Mobile(object):
     ABDUCTION_CONTRACTION_TEST = '{}/MiniME_mobileTests/testAbductionContraction'.format(TEST_SCHEME)
 
 
-class Reasoners(object):
+class Reasoners:
     """Reasoners config namespace."""
     CLASSIFICATION_TIMEOUT = 1200.0
     CONSISTENCY_TIMEOUT = 1200.0

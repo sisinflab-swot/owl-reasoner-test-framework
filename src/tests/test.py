@@ -1,49 +1,38 @@
 import csv
 from os import listdir, path
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
+from subprocess import TimeoutExpired
+from typing import Dict, List, Optional
 
 from src import config
-from src.reasoners.owl import OWLOntology, OWLSyntax
-from src.utils import echo, exc, fileutils
-from src.utils.logger import Logger
-from src.utils.proc import WatchdogException
+from src.reasoners.owl import OWLOntology, OWLReasoner, OWLSyntax
+from src.pyutils import echo, exc, fileutils
+from src.pyutils.logger import Logger
 
 
-class Test(object):
+class Test:
     """Abstract test class."""
     __metaclass__ = ABCMeta
 
-    @abstractproperty
-    def name(self):
-        """:rtype : str"""
+    @property
+    @abstractmethod
+    def name(self) -> str:
         pass
 
     @abstractmethod
-    def setup(self, logger, csv_writer):
-        """Called before the test starts iterating on ontologies.
-
-        :param Logger logger : Logger instance.
-        :param csv.writer csv_writer : CSV writer instance.
-        """
+    def setup(self, logger: Logger, csv_writer: csv.writer):
+        """Called before the test starts iterating on ontologies."""
         pass
 
     @abstractmethod
-    def run(self, onto_name, ontologies, logger, csv_writer):
-        """Runs test over a single ontology.
-
-        :param str onto_name : File name of the ontology.
-        :param dict[str, OWLOntology] ontologies : Ontologies by syntax.
-        :param Logger logger : Logger instance.
-        :param csv.writer csv_writer : CSV writer instance.
-        """
+    def run(self, onto_name: str, ontologies: Dict[str, OWLOntology], logger: Logger, csv_writer: csv.writer):
+        """Runs test over a single ontology."""
         pass
 
-    def __init__(self, datasets=None, reasoners=None, all_syntaxes=False):
-        """
-        :param list[str] datasets : If specified, limit the tests to the specified datasets.
-        :param list[str] reasoners : If specified, limit the tests to the specified reasoners.
-        :param bool all_syntaxes : If true, the test is run on all supported syntaxes.
-        """
+    def __init__(self,
+                 datasets: Optional[List[str]] = None,
+                 reasoners: Optional[List[str]] = None,
+                 all_syntaxes: bool = False):
         self._datasets = datasets
         self._all_syntaxes = all_syntaxes
 
@@ -52,11 +41,8 @@ class Test(object):
         else:
             self._reasoners = config.Reasoners.ALL_DESKTOP
 
-    def start(self, resume_ontology=None):
-        """Starts the test.
-
-        :param str resume_ontology : The ontology from which the test should be resumed.
-        """
+    def start(self, resume_ontology: Optional[str] = None):
+        """Starts the test."""
         data_dir = config.Paths.DATA_DIR
         search_for_resume = True if resume_ontology else False
 
@@ -66,7 +52,7 @@ class Test(object):
             datasets = [path.join(data_dir, d) for d in listdir(data_dir)]
             datasets = [d for d in datasets if path.isdir(d)]
 
-        with Logger(config.Paths.LOG) as logger, open(config.Paths.RESULTS, mode='wb') as csv_file:
+        with Logger(config.Paths.LOG) as logger, open(config.Paths.RESULTS, mode='w') as csv_file:
 
             fileutils.create_dir(config.Paths.WRK_DIR)
             fileutils.create_dir(config.Paths.TEMP_DIR)
@@ -81,16 +67,16 @@ class Test(object):
                 func_dir = path.join(dataset, 'functional')
                 xml_dir = path.join(dataset, 'rdfxml')
 
-                exc.raise_if_not_found(func_dir, file_type='dir')
-                exc.raise_if_not_found(xml_dir, file_type='dir')
+                exc.raise_if_not_found(func_dir, file_type=exc.FileType.DIR)
+                exc.raise_if_not_found(xml_dir, file_type=exc.FileType.DIR)
 
                 onto_names = [f for f in listdir(func_dir) if f.endswith('.owl')]
 
                 # Hello
                 echo.pretty(
-                    'Starting {} test on "{}" dataset ({} ontologies)...'.format(self.name,
-                                                                                 path.basename(dataset),
-                                                                                 len(onto_names)),
+                    'Starting {} test on "{}" dataset ({} ontologies)...\n'.format(self.name,
+                                                                                   path.basename(dataset),
+                                                                                   len(onto_names)),
                     color=echo.Color.GREEN)
 
                 # Test dataset
@@ -122,8 +108,7 @@ class Test(object):
                         if config.debug:
                             raise e
                         else:
-                            err_msg = e.message if e.message else str(e)
-                            echo.error(err_msg)
+                            echo.error(str(e))
                     finally:
                         logger.indent_level -= 1
 
@@ -135,29 +120,29 @@ class StandardPerformanceTest(Test):
     """Abstract test class for measuring the performance of standard reasoning tasks."""
     __metaclass__ = ABCMeta
 
-    @abstractproperty
-    def result_fields(self):
-        """:rtype : list[str]"""
+    @property
+    @abstractmethod
+    def result_fields(self) -> List[str]:
         pass
 
     @abstractmethod
-    def run_reasoner(self, reasoner, ontology, logger):
+    def run_reasoner(self, reasoner: OWLReasoner, ontology: OWLOntology, logger: Logger) -> List[str]:
         """Called every run, for each reasoner and each ontology.
 
-        :param Reasoner reasoner : The reasoner.
-        :param Ontology ontology : The ontology.
-        :param Logger logger : Logger instance.
-        :rtype : list[str]
         :return : Values for the CSV result fields.
         """
         pass
 
-    def __init__(self, datasets=None, reasoners=None, all_syntaxes=False, iterations=1):
+    def __init__(self,
+                 datasets: Optional[List[str]] = None,
+                 reasoners: Optional[List[str]] = None,
+                 all_syntaxes: bool = False,
+                 iterations: int = 1):
         """
-        :param list[str] datasets : If specified, limit the tests to the specified datasets.
-        :param list[str] reasoners : If specified, limit the tests to the specified reasoners.
-        :param bool all_syntaxes : If true, the test is run on all supported syntaxes.
-        :param int iterations : Number of iterations per ontology.
+        :param datasets : If specified, limit the tests to the specified datasets.
+        :param reasoners : If specified, limit the tests to the specified reasoners.
+        :param all_syntaxes : If true, the test is run on all supported syntaxes.
+        :param iterations : Number of iterations per ontology.
         """
         Test.__init__(self, datasets, reasoners, all_syntaxes)
         self.iterations = iterations
@@ -177,7 +162,7 @@ class StandardPerformanceTest(Test):
 
         fail = {syntax: [] for syntax in OWLSyntax.ALL}
 
-        for iteration in xrange(self.iterations):
+        for iteration in range(self.iterations):
             logger.log('Run {}:'.format(iteration + 1), color=echo.Color.YELLOW)
             logger.indent_level += 1
 
@@ -200,7 +185,7 @@ class StandardPerformanceTest(Test):
 
                     try:
                         csv_row.extend(self.run_reasoner(reasoner, ontology, logger))
-                    except WatchdogException:
+                    except TimeoutExpired:
                         csv_row.extend(['timeout'] * len(self.result_fields))
                         logger.log('{}: timeout'.format(syntax))
                         fail[syntax].append(reasoner.name)

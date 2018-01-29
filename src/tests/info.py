@@ -1,6 +1,6 @@
-from test import Test
-from src.utils import echo
+from src.pyutils import echo
 from src.reasoners.owl import OWLSyntax
+from .test import Test
 
 
 class InfoTest(Test):

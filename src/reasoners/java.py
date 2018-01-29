@@ -1,8 +1,10 @@
 import os
+from typing import List, Optional, Union
 
-import minime
-from owl import OWLReasoner, OWLSyntax, TestMode
-from src.utils import bench, exc, fileutils, jar, proc
+from src.pyutils import exc, fileutils
+from src.pyutils.proc import Benchmark, Jar, OutputAction
+from . import minime
+from .owl import OWLReasoner, OWLSyntax, TestMode
 
 
 class JavaReasoner(OWLReasoner):
@@ -22,15 +24,15 @@ class JavaReasoner(OWLReasoner):
 
     # Public methods
 
-    def __init__(self, name, path, owl_tool_path, vm_opts):
+    def __init__(self, name: str, path: str, owl_tool_path: str, vm_opts: List[str]):
         """
-        :param str name : Name of the reasoner.
-        :param str path : Path of the reasoner jar.
-        :param str owl_tool_path : Path of the owltool jar.
-        :param list[str] vm_opts : Options for the Java VM.
+        :param name : Name of the reasoner.
+        :param path : Path of the reasoner jar.
+        :param owl_tool_path : Path of the owltool jar.
+        :param vm_opts : Options for the Java VM.
         """
         exc.raise_if_falsy(name=name)
-        exc.raise_if_not_found(owl_tool_path, file_type='file')
+        exc.raise_if_not_found(owl_tool_path, file_type=exc.FileType.FILE)
 
         super(JavaReasoner, self).__init__(path)
 
@@ -39,7 +41,7 @@ class JavaReasoner(OWLReasoner):
         self.__vm_opts = vm_opts
 
     def classify(self, input_file, output_file=None, timeout=None, mode=TestMode.CORRECTNESS):
-        exc.raise_if_not_found(input_file, file_type='file')
+        exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
 
         args = ['classification']
         classification_out = None
@@ -53,48 +55,38 @@ class JavaReasoner(OWLReasoner):
             args.extend(['-o', classification_out])
 
         args.append(input_file)
-
-        if mode == TestMode.MEMORY:
-            vm_opts = ['-Xms1m'] + self.__vm_opts
-            args = jar.proc_args(jar=self._path, args=args, vm_opts=vm_opts)
-            result = bench.benchmark(args, timeout=timeout)
-        else:
-            result = jar.call(self._path, args=args, vm_opts=self.__vm_opts, timeout=timeout)
+        result = self._run(args, timeout=timeout, mode=mode)
 
         if mode == TestMode.CORRECTNESS:
             args = ['print-tbox', '-o', output_file, classification_out]
-            jar.call(self.__owl_tool_path,
-                     args=args,
-                     vm_opts=self.__vm_opts,
-                     output_action=proc.OutputAction.DISCARD)
+            jar = Jar(self.__owl_tool_path, jar_args=args, vm_opts=self.__vm_opts, output_action=OutputAction.DISCARD)
+            jar.run()
 
         return minime.extract_stats(result)
 
     def consistency(self, input_file, timeout=None, mode=TestMode.CORRECTNESS):
-        exc.raise_if_not_found(input_file, file_type='file')
-
-        args = ['consistency', input_file]
-
-        if mode == TestMode.MEMORY:
-            vm_opts = ['-Xms1m'] + self.__vm_opts
-            args = jar.proc_args(jar=self._path, args=args, vm_opts=vm_opts)
-            result = bench.benchmark(args, timeout=timeout)
-        else:
-            result = jar.call(self._path, args=args, vm_opts=self.__vm_opts, timeout=timeout)
-
+        exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
+        result = self._run(['consistency', input_file], timeout=timeout, mode=mode)
         return minime.extract_consistency_results(result)
 
     def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
-        exc.raise_if_not_found(resource_file, file_type='file')
-        exc.raise_if_not_found(request_file, file_type='file')
+        exc.raise_if_not_found(resource_file, file_type=exc.FileType.FILE)
+        exc.raise_if_not_found(request_file, file_type=exc.FileType.FILE)
 
         args = ['abduction-contraction', '-r', request_file, resource_file]
-
-        if mode == TestMode.MEMORY:
-            vm_opts = ['-Xms1m'] + self.__vm_opts
-            args = jar.proc_args(jar=self._path, args=args, vm_opts=vm_opts)
-            result = bench.benchmark(args, timeout=timeout)
-        else:
-            result = jar.call(self._path, args=args, vm_opts=self.__vm_opts, timeout=timeout)
+        result = self._run(args, timeout=timeout, mode=mode)
 
         return minime.extract_abduction_contraction_results(result)
+
+    # Private methods
+
+    def _run(self, args: List[str], timeout: Optional[float], mode: str) -> Union[Jar, Benchmark]:
+        if mode == TestMode.MEMORY:
+            jar = Jar(self._path, jar_args=args, vm_opts=['-Xms1m'] + self.__vm_opts)
+            result = Benchmark(jar)
+        else:
+            result = Jar(self._path, jar_args=args, vm_opts=self.__vm_opts)
+
+        result.run(timeout=timeout)
+
+        return result

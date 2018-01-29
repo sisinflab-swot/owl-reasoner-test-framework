@@ -1,11 +1,13 @@
 import os
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
+from subprocess import TimeoutExpired
+from typing import List, Optional
 
 from src import config
-from src.reasoners.owl import OWLSyntax, TestMode
-from src.utils import echo, fileutils
-from src.utils.proc import WatchdogException
-from test import Test
+from src.reasoners.owl import OWLOntology, OWLReasoner, OWLSyntax, TestMode
+from src.pyutils import echo, fileutils
+from src.pyutils.logger import Logger
+from .test import Test
 
 
 # noinspection PyTypeChecker
@@ -13,30 +15,24 @@ class AbductionContractionPerformanceTest(Test):
     """Abduction/contraction performance test."""
     __metaclass__ = ABCMeta
 
-    @abstractproperty
-    def result_fields(self):
-        """:rtype : list[str]"""
+    @property
+    @abstractmethod
+    def result_fields(self) -> List[str]:
         pass
 
     @abstractmethod
-    def run_reasoner(self, reasoner, resource, request, logger):
+    def run_reasoner(self,
+                     reasoner: OWLReasoner,
+                     resource: OWLOntology,
+                     request: OWLOntology,
+                     logger: Logger) -> List[str]:
         """Called every run, for each reasoner and each ontology.
 
-        :param Reasoner reasoner : The reasoner.
-        :param Ontology resource : The resource ontology.
-        :param Ontology request : The request ontology.
-        :param Logger logger : Logger instance.
-        :rtype : list[str]
         :return : Values for the CSV result fields.
         """
         pass
 
-    def __init__(self, datasets=None, reasoners=None, iterations=1):
-        """
-        :param list[str] datasets : If specified, limit the tests to the specified datasets.
-        :param list[str] reasoners : If specified, limit the tests to the specified reasoners.
-        :param int iterations : Number of iterations per ontology.
-        """
+    def __init__(self, datasets: Optional[List[str]]=None, reasoners: Optional[List[str]]=None, iterations: int=1):
         Test.__init__(self, datasets, reasoners)
         self._iterations = iterations
 
@@ -50,7 +46,7 @@ class AbductionContractionPerformanceTest(Test):
 
         csv_writer.writerow(csv_header)
 
-    def run(self, onto_name, ontologies, logger, csv_writer):
+    def run(self, onto_name: str, ontologies, logger, csv_writer):
 
         resource = ontologies[OWLSyntax.RDFXML].path
 
@@ -63,7 +59,7 @@ class AbductionContractionPerformanceTest(Test):
             logger.log('No available requests.')
             return
 
-        for iteration in xrange(self._iterations):
+        for iteration in range(self._iterations):
             logger.log('Run {}:'.format(iteration + 1), color=echo.Color.YELLOW)
             logger.indent_level += 1
 
@@ -78,7 +74,7 @@ class AbductionContractionPerformanceTest(Test):
                     logger.log('- {}: '.format(reasoner.name), endl=False)
                     try:
                         csv_row.extend(self.run_reasoner(reasoner, resource, request, logger))
-                    except WatchdogException:
+                    except TimeoutExpired:
                         csv_row.extend(['timeout', 'timeout', 'timeout', 'timeout'])
                         logger.log('timeout')
                     except Exception:

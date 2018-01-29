@@ -1,8 +1,9 @@
+from subprocess import TimeoutExpired
+
 from src import config
 from src.reasoners.owl import TestMode
-from src.utils import echo, fileutils
-from src.utils.proc import WatchdogException
-from test import Test, StandardPerformanceTest
+from src.pyutils import echo, fileutils
+from .test import Test, StandardPerformanceTest
 
 
 class ConsistencyCorrectnessTest(Test):
@@ -29,7 +30,7 @@ class ConsistencyCorrectnessTest(Test):
             try:
                 reasoner_results = reasoner.consistency(ontologies[reasoner.preferred_syntax].path,
                                                         timeout=config.Reasoners.CONSISTENCY_TIMEOUT)
-            except WatchdogException:
+            except TimeoutExpired:
                 result = 'timeout'
                 color = echo.Color.RED
             except Exception:

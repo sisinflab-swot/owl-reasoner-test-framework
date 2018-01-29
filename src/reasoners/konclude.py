@@ -1,8 +1,10 @@
 import re
 import os
+from typing import List, Optional, Union
 
-from owl import ConsistencyResults, OWLReasoner, OWLSyntax, ReasoningStats, TestMode
-from src.utils import bench, exc, fileutils, jar, proc
+from src.pyutils import exc, fileutils
+from src.pyutils.proc import Benchmark, Jar, OutputAction, Task
+from .owl import ConsistencyResults, OWLReasoner, OWLSyntax, ReasoningStats, TestMode
 
 
 class Konclude(OWLReasoner):
@@ -10,14 +12,9 @@ class Konclude(OWLReasoner):
 
     # Public methods
 
-    def __init__(self, path, owl_tool_path, vm_opts):
-        """
-        :param str path : Path of the Konclude executable.
-        :param str owl_tool_path : Path of the owltool jar.
-        :param list[str] vm_opts : Options for the Java VM.
-        """
+    def __init__(self, path: str, owl_tool_path: str, vm_opts: List[str]):
         super(Konclude, self).__init__(path)
-        exc.raise_if_not_found(owl_tool_path, file_type='file')
+        exc.raise_if_not_found(owl_tool_path, file_type=exc.FileType.FILE)
         self.__owl_tool_path = owl_tool_path
         self.__vm_opts = vm_opts
 
@@ -36,9 +33,9 @@ class Konclude(OWLReasoner):
         return OWLSyntax.FUNCTIONAL
 
     def classify(self, input_file, output_file=None, timeout=None, mode=TestMode.CORRECTNESS):
-        exc.raise_if_not_found(input_file, file_type='file')
+        exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
 
-        args = [self._path, 'classification', '-i', input_file]
+        args = ['classification', '-i', input_file]
         classification_out = None
 
         if mode == TestMode.CORRECTNESS:
@@ -51,43 +48,38 @@ class Konclude(OWLReasoner):
 
         args.append('-v')
 
-        if mode == TestMode.MEMORY:
-            result = bench.benchmark(args, timeout=timeout)
-        else:
-            result = proc.call(args, timeout=timeout)
+        result = self._run(args=args, timeout=timeout, mode=mode)
 
         if mode == TestMode.CORRECTNESS:
             args = ['print-tbox', '-o', output_file, classification_out]
-            jar.call(self.__owl_tool_path,
-                     args=args,
-                     vm_opts=self.__vm_opts,
-                     output_action=proc.OutputAction.DISCARD)
+            jar = Jar(self.__owl_tool_path, jar_args=args, vm_opts=self.__vm_opts, output_action=OutputAction.DISCARD)
+            jar.run()
 
-        return self.__extract_classification_stats(result)
+        return self._extract_classification_stats(result)
 
     def consistency(self, input_file, timeout=None, mode=TestMode.CORRECTNESS):
-        exc.raise_if_not_found(input_file, file_type='file')
+        exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
 
-        args = [self._path, 'consistency', '-i', input_file, '-v']
+        args = ['consistency', '-i', input_file, '-v']
+        result = self._run(args=args, timeout=timeout, mode=mode)
 
-        if mode == TestMode.MEMORY:
-            result = bench.benchmark(args, timeout=timeout)
-        else:
-            result = proc.call(args, timeout=timeout)
-
-        return self.__extract_consistency_results(result)
+        return self._extract_consistency_results(result)
 
     def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
         raise NotImplementedError
 
     # Private methods
 
-    def __extract_stats(self, result):
-        """Extract stats for a reasoning task.
+    def _run(self, args: List[str], timeout: Optional[float], mode: str) -> Task:
+        task = Task(self._path, args=args)
 
-        :param proc.CallResult result : CallResult instance.
-        :rtype : Stats
-        """
+        if mode == TestMode.MEMORY:
+            task = Benchmark(task)
+
+        task.run(timeout=timeout)
+        return task
+
+    def _extract_stats(self, result: Union[Task, Benchmark]) -> ReasoningStats:
         stdout = result.stdout
         exc.raise_if_falsy(stdout=stdout)
 
@@ -99,17 +91,12 @@ class Konclude(OWLReasoner):
         exc.raise_if_falsy(res=res)
         total_ms = float(res.group(1))
 
-        max_memory = result.max_memory if isinstance(result, bench.BenchResult) else 0
+        max_memory = result.max_memory if isinstance(result, Benchmark) else 0
 
         return ReasoningStats(parsing_ms=parsing_ms, reasoning_ms=(total_ms - parsing_ms), max_memory=max_memory)
 
-    def __extract_classification_stats(self, result):
-        """Extract stats for the classification task.
-
-        :param proc.CallResult result : CallResult instance.
-        :rtype : Stats
-        """
-        stats = self.__extract_stats(result)
+    def _extract_classification_stats(self, result: Union[Task, Benchmark]) -> ReasoningStats:
+        stats = self._extract_stats(result)
 
         res = re.search(r'Query \'UnnamedWriteClassHierarchyQuery\' processed in \'(.*)\' ms\.', result.stdout)
 
@@ -119,13 +106,8 @@ class Konclude(OWLReasoner):
 
         return stats
 
-    def __extract_consistency_results(self, result):
-        """Extract the result of the consistency task.
-
-        :param proc.CallResult result : CallResult instance.
-        :rtype : ConsistencyResults
-        """
-        stats = self.__extract_stats(result)
+    def _extract_consistency_results(self, result: Union[Task, Benchmark]) -> ConsistencyResults:
+        stats = self._extract_stats(result)
 
         res = re.search(r'Ontology \'.*\' is (.*)\.', result.stdout)
         exc.raise_if_falsy(res=res)
