@@ -112,7 +112,7 @@ class Test:
                     finally:
                         logger.indent_level -= 1
 
-                    logger.log('')
+                logger.log('')
 
 
 # noinspection PyTypeChecker
