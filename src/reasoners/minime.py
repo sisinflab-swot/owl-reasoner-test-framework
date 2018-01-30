@@ -15,7 +15,7 @@ class MiniME(OWLReasoner):
 
     @property
     def name(self):
-        return 'MiniME'
+        return 'MiniME Swift'
 
     @property
     def supported_syntaxes(self):
@@ -97,7 +97,7 @@ class MiniMEMobile(OWLReasoner):
 
     @property
     def name(self):
-        return 'MiniME mobile'
+        return 'MiniME Swift mobile'
 
     @property
     def supported_syntaxes(self):

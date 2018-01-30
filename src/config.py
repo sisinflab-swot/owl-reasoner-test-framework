@@ -22,7 +22,7 @@ class Paths:
     FACT = path.join(FACT_DIR, 'factcli.jar')
     HERMIT = path.join(BIN_DIR, 'HermiT', 'hermitcli.jar')
     KONCLUDE = path.join(BIN_DIR, 'Konclude', 'Binaries', 'Konclude')
-    MINIME = path.join(BIN_DIR, 'MiniME', 'MiniME-cli')
+    MINIME_SWIFT = path.join(BIN_DIR, 'MiniMESwift', 'MiniME-cli')
     MINIME_JAVA = path.join(BIN_DIR, 'MiniMEJava', 'minimecli.jar')
     OWLTOOL = path.join(BIN_DIR, 'OwlTool', 'owltool.jar')
     TROWL = path.join(BIN_DIR, 'TrOWL', 'trowlcli.jar')
@@ -67,7 +67,7 @@ class Reasoners:
                         owl_tool_path=Paths.OWLTOOL,
                         vm_opts=COMMON_VM_OPTS)
 
-    MINIME = MiniME(path=Paths.MINIME)
+    MINIME_SWIFT = MiniME(path=Paths.MINIME_SWIFT)
 
     MINIME_MOBILE = MiniMEMobile(project=Paths.XCODE_PROJECT,
                                  scheme=Mobile.SCHEME,
@@ -85,8 +85,8 @@ class Reasoners:
                          owl_tool_path=Paths.OWLTOOL,
                          vm_opts=COMMON_VM_OPTS)
 
-    ALL = [FACT, HERMIT, KONCLUDE, MINIME, MINIME_MOBILE, MINIME_JAVA, TROWL]
-    ALL_DESKTOP = [FACT, HERMIT, KONCLUDE, MINIME, MINIME_JAVA, TROWL]
-    NON_STANDARD = [MINIME, MINIME_JAVA]
+    ALL = [FACT, HERMIT, KONCLUDE, MINIME_SWIFT, MINIME_MOBILE, MINIME_JAVA, TROWL]
+    ALL_DESKTOP = [FACT, HERMIT, KONCLUDE, MINIME_SWIFT, MINIME_JAVA, TROWL]
+    NON_STANDARD = [MINIME_SWIFT, MINIME_JAVA]
 
     BY_NAME = dict(zip([r.name for r in ALL], ALL))

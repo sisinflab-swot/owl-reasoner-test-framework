@@ -20,7 +20,7 @@ class ClassificationCorrectnessTest(Test):
 
         csv_header = ['Ontology']
 
-        for reasoner in [r for r in self._reasoners if r.name != config.Reasoners.MINIME.name]:
+        for reasoner in [r for r in self._reasoners if r.name != config.Reasoners.MINIME_SWIFT.name]:
             csv_header.append(reasoner.name)
 
         csv_writer.writerow(csv_header)
@@ -29,7 +29,7 @@ class ClassificationCorrectnessTest(Test):
 
         fileutils.remove_dir_contents(config.Paths.TEMP_DIR)
 
-        minime = config.Reasoners.MINIME
+        minime = config.Reasoners.MINIME_SWIFT
         reference_out = os.path.join(config.Paths.TEMP_DIR, 'reference.txt')
         minime_out = os.path.join(config.Paths.TEMP_DIR, 'minime.txt')
 
