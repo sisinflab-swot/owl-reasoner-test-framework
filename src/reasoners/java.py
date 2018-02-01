@@ -3,8 +3,8 @@ from typing import List, Optional, Union
 
 from src.pyutils import exc, fileutils
 from src.pyutils.proc import Benchmark, Jar, OutputAction
-from . import minime
-from .owl import OWLReasoner, OWLSyntax, TestMode
+from .owl import OWLReasoner, OWLSyntax, ReasoningTask, TestMode
+from .results import ConsistencyResults, ReasoningStats
 
 
 class JavaReasoner(OWLReasoner):
@@ -21,6 +21,10 @@ class JavaReasoner(OWLReasoner):
     @property
     def preferred_syntax(self):
         return OWLSyntax.FUNCTIONAL
+
+    @property
+    def supported_tasks(self):
+        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY]
 
     # Public methods
 
@@ -55,28 +59,22 @@ class JavaReasoner(OWLReasoner):
             args.extend(['-o', classification_out])
 
         args.append(input_file)
-        result = self._run(args, timeout=timeout, mode=mode)
+        task = self._run(args, timeout=timeout, mode=mode)
 
         if mode == TestMode.CORRECTNESS:
             args = ['print-tbox', '-o', output_file, classification_out]
             jar = Jar(self.__owl_tool_path, jar_args=args, vm_opts=self.__vm_opts, output_action=OutputAction.DISCARD)
             jar.run()
 
-        return minime.extract_stats(result)
+        return ReasoningStats.extract(task)
 
     def consistency(self, input_file, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
-        result = self._run(['consistency', input_file], timeout=timeout, mode=mode)
-        return minime.extract_consistency_results(result)
+        task = self._run(['consistency', input_file], timeout=timeout, mode=mode)
+        return ConsistencyResults.extract(task)
 
     def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
-        exc.raise_if_not_found(resource_file, file_type=exc.FileType.FILE)
-        exc.raise_if_not_found(request_file, file_type=exc.FileType.FILE)
-
-        args = ['abduction-contraction', '-r', request_file, resource_file]
-        result = self._run(args, timeout=timeout, mode=mode)
-
-        return minime.extract_abduction_contraction_results(result)
+        raise NotImplementedError
 
     # Private methods
 

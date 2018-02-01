@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from subprocess import TimeoutExpired
 from typing import Dict, List, Optional
 
-from src import config
+from src.config import DEBUG, Paths, Reasoners
 from src.reasoners.owl import OWLOntology, OWLReasoner, OWLSyntax
 from src.pyutils import echo, exc, fileutils
 from src.pyutils.logger import Logger
@@ -17,6 +17,11 @@ class Test:
     @property
     @abstractmethod
     def name(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def default_reasoners(self) -> List[OWLReasoner]:
         pass
 
     @abstractmethod
@@ -37,13 +42,16 @@ class Test:
         self._all_syntaxes = all_syntaxes
 
         if reasoners:
-            self._reasoners = [config.Reasoners.BY_NAME[n] for n in reasoners]
+            try:
+                self._reasoners = [Reasoners.by_name()[n] for n in reasoners]
+            except KeyError as e:
+                exc.re_raise_new_message(e, 'No such reasoner: ' + str(e))
         else:
-            self._reasoners = config.Reasoners.ALL_DESKTOP
+            self._reasoners = self.default_reasoners
 
     def start(self, resume_ontology: Optional[str] = None):
         """Starts the test."""
-        data_dir = config.Paths.DATA_DIR
+        data_dir = Paths.DATA_DIR
         search_for_resume = True if resume_ontology else False
 
         if self._datasets:
@@ -52,11 +60,11 @@ class Test:
             datasets = [path.join(data_dir, d) for d in listdir(data_dir)]
             datasets = [d for d in datasets if path.isdir(d)]
 
-        with Logger(config.Paths.LOG) as logger, open(config.Paths.RESULTS, mode='w') as csv_file:
+        with Logger(Paths.LOG) as logger, open(Paths.RESULTS, mode='w') as csv_file:
 
-            fileutils.create_dir(config.Paths.WRK_DIR)
-            fileutils.create_dir(config.Paths.TEMP_DIR)
-            fileutils.remove_dir_contents(config.Paths.TEMP_DIR)
+            fileutils.create_dir(Paths.WRK_DIR)
+            fileutils.create_dir(Paths.TEMP_DIR)
+            fileutils.remove_dir_contents(Paths.TEMP_DIR)
 
             logger.clear()
             csv_writer = csv.writer(csv_file)
@@ -105,7 +113,7 @@ class Test:
                     try:
                         self.run(onto_name, ontologies, logger, csv_writer)
                     except Exception as e:
-                        if config.debug:
+                        if DEBUG:
                             raise e
                         else:
                             echo.error(str(e))
@@ -190,7 +198,7 @@ class StandardPerformanceTest(Test):
                         logger.log('{}: timeout'.format(syntax))
                         fail[syntax].append(reasoner.name)
                     except Exception as e:
-                        if config.debug:
+                        if DEBUG:
                             raise e
 
                         csv_row.extend(['error'] * len(self.result_fields))
@@ -210,6 +218,10 @@ class NotImplementedTest(Test):
     @property
     def name(self):
         return 'not implemented'
+
+    @property
+    def default_reasoners(self):
+        return []
 
     def setup(self, logger, csv_writer):
         del logger, csv_writer  # Unused

@@ -1,6 +1,7 @@
 import argparse
 
 from . import config
+from .config import Reasoners
 from .reasoners.owl import TestMode
 
 from .tests.test import NotImplementedTest
@@ -32,22 +33,20 @@ from .tests.consistency import (
 
 def abduction_contraction_sub(args) -> int:
     datasets = args.datasets if args.datasets else ['sisinflab']
-    reasoners = args.reasoners if args.reasoners else [r.name for r in config.Reasoners.NON_STANDARD]
-
     {
         TestMode.CORRECTNESS: NotImplementedTest(),
 
         TestMode.TIME: AbductionContractionTimeTest(datasets=datasets,
-                                                    reasoners=reasoners,
-                                                    iterations=config.Reasoners.ABDUCTION_CONTRACTION_ITERATIONS),
+                                                    reasoners=args.reasoners,
+                                                    iterations=Reasoners.ABDUCTION_CONTRACTION_ITERATIONS),
 
         TestMode.MEMORY: AbductionContractionMemoryTest(datasets=datasets,
-                                                        reasoners=reasoners,
-                                                        iterations=config.Reasoners.ABDUCTION_CONTRACTION_ITERATIONS),
+                                                        reasoners=args.reasoners,
+                                                        iterations=Reasoners.ABDUCTION_CONTRACTION_ITERATIONS),
 
         TestMode.MOBILE: AbductionContractionMobileTest(datasets=datasets,
-                                                        reasoners=[config.Reasoners.MINIME_MOBILE.name],
-                                                        iterations=config.Reasoners.ABDUCTION_CONTRACTION_ITERATIONS)
+                                                        reasoners=args.reasoners,
+                                                        iterations=Reasoners.ABDUCTION_CONTRACTION_ITERATIONS)
     }[args.mode].start(args.resume_after)
     return 0
 
@@ -60,16 +59,16 @@ def classification_sub(args) -> int:
         TestMode.TIME: ClassificationTimeTest(datasets=args.datasets,
                                               reasoners=args.reasoners,
                                               all_syntaxes=args.all_syntaxes,
-                                              iterations=config.Reasoners.CLASSIFICATION_ITERATIONS),
+                                              iterations=Reasoners.CLASSIFICATION_ITERATIONS),
 
         TestMode.MEMORY: ClassificationMemoryTest(datasets=args.datasets,
                                                   reasoners=args.reasoners,
                                                   all_syntaxes=args.all_syntaxes,
-                                                  iterations=config.Reasoners.CLASSIFICATION_ITERATIONS),
+                                                  iterations=Reasoners.CLASSIFICATION_ITERATIONS),
 
         TestMode.MOBILE: ClassificationMobileTest(datasets=args.datasets,
-                                                  reasoners=[config.Reasoners.MINIME_MOBILE.name],
-                                                  iterations=config.Reasoners.CLASSIFICATION_ITERATIONS)
+                                                  reasoners=args.reasoners,
+                                                  iterations=Reasoners.CLASSIFICATION_ITERATIONS)
     }[args.mode].start(args.resume_after)
     return 0
 
@@ -82,16 +81,16 @@ def consistency_sub(args) -> int:
         TestMode.TIME: ConsistencyTimeTest(datasets=args.datasets,
                                            reasoners=args.reasoners,
                                            all_syntaxes=args.all_syntaxes,
-                                           iterations=config.Reasoners.CONSISTENCY_ITERATIONS),
+                                           iterations=Reasoners.CONSISTENCY_ITERATIONS),
 
         TestMode.MEMORY: ConsistencyMemoryTest(datasets=args.datasets,
                                                reasoners=args.reasoners,
                                                all_syntaxes=args.all_syntaxes,
-                                               iterations=config.Reasoners.CONSISTENCY_ITERATIONS),
+                                               iterations=Reasoners.CONSISTENCY_ITERATIONS),
 
         TestMode.MOBILE: ConsistencyMobileTest(datasets=args.datasets,
-                                               reasoners=[config.Reasoners.MINIME_MOBILE.name],
-                                               iterations=config.Reasoners.CONSISTENCY_ITERATIONS)
+                                               reasoners=args.reasoners,
+                                               iterations=Reasoners.CONSISTENCY_ITERATIONS)
     }[args.mode].start(args.resume_after)
     return 0
 
@@ -145,7 +144,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # Main parser
     main_parser = argparse.ArgumentParser(prog='test',
-                                          description='Test suite for the MiniME reasoner.',
+                                          description='Test framework for OWL reasoners.',
                                           parents=[help_parser],
                                           add_help=False)
 
@@ -204,7 +203,7 @@ class _EnableDebugAction(argparse._StoreTrueAction):
     def __call__(self, parser, namespace, values, option_string=None):
         debug = self.const
         if debug:
-            config.debug = True  # Respect cli argument.
+            config.DEBUG = True  # Respect cli argument.
         else:
-            self.const = config.debug  # Set cli argument to config value.
+            self.const = config.DEBUG  # Set cli argument to config value.
         super(_EnableDebugAction, self).__call__(parser, namespace, values, option_string)

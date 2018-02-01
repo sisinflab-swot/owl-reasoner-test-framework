@@ -4,7 +4,13 @@ from typing import List, Optional, Union
 
 from src.pyutils import exc, fileutils
 from src.pyutils.proc import Benchmark, Jar, OutputAction, Task
-from .owl import ConsistencyResults, OWLReasoner, OWLSyntax, ReasoningStats, TestMode
+from .owl import (
+    OWLReasoner,
+    OWLSyntax,
+    ReasoningTask,
+    TestMode
+)
+from .results import ConsistencyResults, ReasoningStats
 
 
 class Konclude(OWLReasoner):
@@ -31,6 +37,10 @@ class Konclude(OWLReasoner):
     @property
     def preferred_syntax(self):
         return OWLSyntax.FUNCTIONAL
+
+    @property
+    def supported_tasks(self):
+        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY]
 
     def classify(self, input_file, output_file=None, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)

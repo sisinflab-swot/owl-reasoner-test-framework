@@ -2,8 +2,8 @@ import filecmp
 import os
 from subprocess import TimeoutExpired
 
-from src import config
-from src.reasoners.owl import TestMode
+from src.config import Paths, Reasoners
+from src.reasoners.owl import ReasoningTask, TestMode
 from src.pyutils import echo, fileutils
 from .test import Test, StandardPerformanceTest
 
@@ -15,23 +15,27 @@ class ClassificationCorrectnessTest(Test):
     def name(self):
         return 'classification correctness'
 
+    @property
+    def default_reasoners(self):
+        return Reasoners.desktop(Reasoners.supporting_task(ReasoningTask.CLASSIFICATION))
+
     def setup(self, logger, csv_writer):
         del logger  # Unused
 
         csv_header = ['Ontology']
 
-        for reasoner in [r for r in self._reasoners if r.name != config.Reasoners.MINIME_SWIFT.name]:
+        for reasoner in [r for r in self._reasoners if r.name != Reasoners.MINIME_SWIFT.name]:
             csv_header.append(reasoner.name)
 
         csv_writer.writerow(csv_header)
 
     def run(self, onto_name, ontologies, logger, csv_writer):
 
-        fileutils.remove_dir_contents(config.Paths.TEMP_DIR)
+        fileutils.remove_dir_contents(Paths.TEMP_DIR)
 
-        minime = config.Reasoners.MINIME_SWIFT
-        reference_out = os.path.join(config.Paths.TEMP_DIR, 'reference.txt')
-        minime_out = os.path.join(config.Paths.TEMP_DIR, 'minime.txt')
+        minime = Reasoners.MINIME_SWIFT
+        reference_out = os.path.join(Paths.TEMP_DIR, 'reference.txt')
+        minime_out = os.path.join(Paths.TEMP_DIR, 'minime.txt')
 
         csv_row = [onto_name]
 
@@ -41,7 +45,7 @@ class ClassificationCorrectnessTest(Test):
 
         minime.classify(ontologies[minime.preferred_syntax].path,
                         output_file=minime_out,
-                        timeout=config.Reasoners.CLASSIFICATION_TIMEOUT)
+                        timeout=Reasoners.CLASSIFICATION_TIMEOUT)
         logger.log('done', color=echo.Color.GREEN)
 
         for reasoner in [r for r in self._reasoners if r.name != minime.name]:
@@ -50,7 +54,7 @@ class ClassificationCorrectnessTest(Test):
             try:
                 reasoner.classify(ontologies[reasoner.preferred_syntax].path,
                                   output_file=reference_out,
-                                  timeout=config.Reasoners.CLASSIFICATION_TIMEOUT)
+                                  timeout=Reasoners.CLASSIFICATION_TIMEOUT)
             except TimeoutExpired:
                 result = 'timeout'
                 color = echo.Color.RED
@@ -80,13 +84,17 @@ class ClassificationTimeTest(StandardPerformanceTest):
         return 'classification time'
 
     @property
+    def default_reasoners(self):
+        return Reasoners.desktop(Reasoners.supporting_task(ReasoningTask.CLASSIFICATION))
+
+    @property
     def result_fields(self):
         return ['parsing', 'classification']
 
     def run_reasoner(self, reasoner, ontology, logger):
 
         stats = reasoner.classify(ontology.path,
-                                  timeout=config.Reasoners.CLASSIFICATION_TIMEOUT,
+                                  timeout=Reasoners.CLASSIFICATION_TIMEOUT,
                                   mode=TestMode.TIME)
 
         logger.log('{}: Parsing {:.0f} ms | Classification {:.0f} ms'.format(ontology.syntax,
@@ -103,13 +111,17 @@ class ClassificationMemoryTest(StandardPerformanceTest):
         return 'classification memory'
 
     @property
+    def default_reasoners(self):
+        return Reasoners.desktop(Reasoners.supporting_task(ReasoningTask.CLASSIFICATION))
+
+    @property
     def result_fields(self):
         return ['memory']
 
     def run_reasoner(self, reasoner, ontology, logger):
 
         stats = reasoner.classify(ontology.path,
-                                  timeout=config.Reasoners.CLASSIFICATION_TIMEOUT,
+                                  timeout=Reasoners.CLASSIFICATION_TIMEOUT,
                                   mode=TestMode.MEMORY)
 
         logger.log('{}: {}'.format(ontology.syntax, fileutils.human_readable_bytes(stats.max_memory)))
@@ -125,12 +137,16 @@ class ClassificationMobileTest(StandardPerformanceTest):
         return 'classification mobile'
 
     @property
+    def default_reasoners(self):
+        return Reasoners.mobile(Reasoners.supporting_task(ReasoningTask.CLASSIFICATION))
+
+    @property
     def result_fields(self):
         return ['parsing', 'classification', 'memory']
 
     def run_reasoner(self, reasoner, ontology, logger):
 
-        stats = reasoner.classify(ontology.path, timeout=config.Reasoners.CLASSIFICATION_TIMEOUT)
+        stats = reasoner.classify(ontology.path, timeout=Reasoners.CLASSIFICATION_TIMEOUT)
         human_readable_memory = fileutils.human_readable_bytes(stats.max_memory)
 
         logger.log('Parsing {:.0f} ms | Classification {:.0f} ms | Memory {}'.format(stats.parsing_ms,

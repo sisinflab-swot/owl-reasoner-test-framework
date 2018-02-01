@@ -1,7 +1,7 @@
 from subprocess import TimeoutExpired
 
-from src import config
-from src.reasoners.owl import TestMode
+from src.config import Reasoners
+from src.reasoners.owl import ReasoningTask, TestMode
 from src.pyutils import echo, fileutils
 from .test import Test, StandardPerformanceTest
 
@@ -12,6 +12,10 @@ class ConsistencyCorrectnessTest(Test):
     @property
     def name(self):
         return 'consistency correctness'
+
+    @property
+    def default_reasoners(self):
+        return Reasoners.desktop(Reasoners.supporting_task(ReasoningTask.CONSISTENCY))
 
     def setup(self, logger, csv_writer):
         del logger  # Unused
@@ -29,7 +33,7 @@ class ConsistencyCorrectnessTest(Test):
 
             try:
                 reasoner_results = reasoner.consistency(ontologies[reasoner.preferred_syntax].path,
-                                                        timeout=config.Reasoners.CONSISTENCY_TIMEOUT)
+                                                        timeout=Reasoners.CONSISTENCY_TIMEOUT)
             except TimeoutExpired:
                 result = 'timeout'
                 color = echo.Color.RED
@@ -58,13 +62,17 @@ class ConsistencyTimeTest(StandardPerformanceTest):
         return 'consistency time'
 
     @property
+    def default_reasoners(self):
+        return Reasoners.desktop(Reasoners.supporting_task(ReasoningTask.CONSISTENCY))
+
+    @property
     def result_fields(self):
         return ['parsing', 'consistency']
 
     def run_reasoner(self, reasoner, ontology, logger):
 
         results = reasoner.consistency(ontology.path,
-                                       timeout=config.Reasoners.CONSISTENCY_TIMEOUT,
+                                       timeout=Reasoners.CONSISTENCY_TIMEOUT,
                                        mode=TestMode.TIME)
 
         stats = results.stats
@@ -82,12 +90,16 @@ class ConsistencyMemoryTest(StandardPerformanceTest):
         return 'consistency memory'
 
     @property
+    def default_reasoners(self):
+        return Reasoners.desktop(Reasoners.supporting_task(ReasoningTask.CONSISTENCY))
+
+    @property
     def result_fields(self):
         return ['memory']
 
     def run_reasoner(self, reasoner, ontology, logger):
         results = reasoner.consistency(ontology.path,
-                                       timeout=config.Reasoners.CONSISTENCY_TIMEOUT,
+                                       timeout=Reasoners.CONSISTENCY_TIMEOUT,
                                        mode=TestMode.MEMORY)
         stats = results.stats
 
@@ -104,12 +116,16 @@ class ConsistencyMobileTest(StandardPerformanceTest):
         return 'consistency mobile'
 
     @property
+    def default_reasoners(self):
+        return Reasoners.mobile(Reasoners.supporting_task(ReasoningTask.CONSISTENCY))
+
+    @property
     def result_fields(self):
         return ['parsing', 'consistency', 'memory']
 
     def run_reasoner(self, reasoner, ontology, logger):
 
-        stats = reasoner.consistency(ontology.path, timeout=config.Reasoners.CONSISTENCY_TIMEOUT).stats
+        stats = reasoner.consistency(ontology.path, timeout=Reasoners.CONSISTENCY_TIMEOUT).stats
         human_readable_memory = fileutils.human_readable_bytes(stats.max_memory)
 
         logger.log('Parsing {:.0f} ms | Consistency {:.0f} ms | Memory {}'.format(stats.parsing_ms,

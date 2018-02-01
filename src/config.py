@@ -1,12 +1,14 @@
 import sys
 from os import path
+from typing import Dict, List, Optional
 
+from .reasoners.owl import OWLReasoner
 from .reasoners.java import JavaReasoner
 from .reasoners.konclude import Konclude
-from .reasoners.minime import MiniME, MiniMEMobile
+from .reasoners.minime import MiniMEJava, MiniMESwift, MiniMESwiftMobile
 
 
-debug = False
+DEBUG = False
 
 
 class Paths:
@@ -67,26 +69,47 @@ class Reasoners:
                         owl_tool_path=Paths.OWLTOOL,
                         vm_opts=COMMON_VM_OPTS)
 
-    MINIME_SWIFT = MiniME(path=Paths.MINIME_SWIFT)
+    MINIME_SWIFT = MiniMESwift(path=Paths.MINIME_SWIFT)
 
-    MINIME_MOBILE = MiniMEMobile(project=Paths.XCODE_PROJECT,
-                                 scheme=Mobile.SCHEME,
-                                 classification_test=Mobile.CLASSIFICATION_TEST,
-                                 consistency_test=Mobile.CONSISTENCY_TEST,
-                                 abduction_contraction_test=Mobile.ABDUCTION_CONTRACTION_TEST)
+    MINIME_SWIFT_MOBILE = MiniMESwiftMobile(project=Paths.XCODE_PROJECT,
+                                            scheme=Mobile.SCHEME,
+                                            classification_test=Mobile.CLASSIFICATION_TEST,
+                                            consistency_test=Mobile.CONSISTENCY_TEST,
+                                            abduction_contraction_test=Mobile.ABDUCTION_CONTRACTION_TEST)
 
-    MINIME_JAVA = JavaReasoner(name='MiniME Java',
-                               path=Paths.MINIME_JAVA,
-                               owl_tool_path=Paths.OWLTOOL,
-                               vm_opts=COMMON_VM_OPTS)
+    MINIME_JAVA = MiniMEJava(path=Paths.MINIME_JAVA,
+                             owl_tool_path=Paths.OWLTOOL,
+                             vm_opts=COMMON_VM_OPTS)
 
     TROWL = JavaReasoner(name='TrOWL',
                          path=Paths.TROWL,
                          owl_tool_path=Paths.OWLTOOL,
                          vm_opts=COMMON_VM_OPTS)
 
-    ALL = [FACT, HERMIT, KONCLUDE, MINIME_SWIFT, MINIME_MOBILE, MINIME_JAVA, TROWL]
-    ALL_DESKTOP = [FACT, HERMIT, KONCLUDE, MINIME_SWIFT, MINIME_JAVA, TROWL]
-    NON_STANDARD = [MINIME_SWIFT, MINIME_JAVA]
+    ALL = [FACT, HERMIT, KONCLUDE, MINIME_JAVA, MINIME_SWIFT, MINIME_SWIFT_MOBILE, TROWL]
 
-    BY_NAME = dict(zip([r.name for r in ALL], ALL))
+    # Public methods
+
+    @classmethod
+    def by_name(cls, reasoners: Optional[List[OWLReasoner]] = None) -> Dict[str, OWLReasoner]:
+        if not reasoners:
+            reasoners = cls.ALL
+        return dict(zip([r.name for r in reasoners], reasoners))
+
+    @classmethod
+    def desktop(cls, reasoners: Optional[List[OWLReasoner]] = None) -> List[OWLReasoner]:
+        if not reasoners:
+            reasoners = cls.ALL
+        return [r for r in reasoners if not r.is_mobile]
+
+    @classmethod
+    def mobile(cls, reasoners: Optional[List[OWLReasoner]] = None) -> List[OWLReasoner]:
+        if not reasoners:
+            reasoners = cls.ALL
+        return [r for r in reasoners if r.is_mobile]
+
+    @classmethod
+    def supporting_task(cls, task: str, reasoners: Optional[List[OWLReasoner]] = None) -> List[OWLReasoner]:
+        if not reasoners:
+            reasoners = cls.ALL
+        return [r for r in reasoners if task in r.supported_tasks]

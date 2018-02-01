@@ -1,3 +1,4 @@
+from src.config import Reasoners
 from src.pyutils import echo
 from src.reasoners.owl import OWLSyntax
 from .test import Test
@@ -9,6 +10,10 @@ class InfoTest(Test):
     @property
     def name(self):
         return 'info'
+
+    @property
+    def default_reasoners(self):
+        return Reasoners.ALL
 
     def setup(self, logger, csv_writer):
         csv_writer.writerow(['Ontology'] + ['Size ({})'.format(s) for s in OWLSyntax.ALL])

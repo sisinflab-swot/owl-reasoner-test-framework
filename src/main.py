@@ -20,7 +20,7 @@ def main() -> int:
         echo.error('Interrupted by user.')
         ret_val = 1
     except Exception as e:
-        if config.debug:
+        if config.DEBUG:
             raise
         else:
             echo.error(str(e))

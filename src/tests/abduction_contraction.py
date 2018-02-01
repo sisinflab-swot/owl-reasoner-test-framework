@@ -3,8 +3,8 @@ from abc import ABCMeta, abstractmethod
 from subprocess import TimeoutExpired
 from typing import List, Optional
 
-from src import config
-from src.reasoners.owl import OWLOntology, OWLReasoner, OWLSyntax, TestMode
+from src.config import Reasoners
+from src.reasoners.owl import OWLOntology, OWLReasoner, OWLSyntax, ReasoningTask, TestMode
 from src.pyutils import echo, fileutils
 from src.pyutils.logger import Logger
 from .test import Test
@@ -19,6 +19,10 @@ class AbductionContractionPerformanceTest(Test):
     @abstractmethod
     def result_fields(self) -> List[str]:
         pass
+
+    @property
+    def default_reasoners(self):
+        return Reasoners.desktop(Reasoners.supporting_task(ReasoningTask.NON_STANDARD))
 
     @abstractmethod
     def run_reasoner(self,
@@ -102,7 +106,7 @@ class AbductionContractionTimeTest(AbductionContractionPerformanceTest):
     def run_reasoner(self, reasoner, resource, request, logger):
 
         stats = reasoner.abduction_contraction(resource, request,
-                                               timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT,
+                                               timeout=Reasoners.ABDUCTION_CONTRACTION_TIMEOUT,
                                                mode=TestMode.TIME)
 
         logger.log(('Resource parsing {:.0f} ms | '
@@ -130,7 +134,7 @@ class AbductionContractionMemoryTest(AbductionContractionPerformanceTest):
     def run_reasoner(self, reasoner, resource, request, logger):
 
         stats = reasoner.abduction_contraction(resource, request,
-                                               timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT,
+                                               timeout=Reasoners.ABDUCTION_CONTRACTION_TIMEOUT,
                                                mode=TestMode.MEMORY)
 
         logger.log('Max memory: {}'.format(fileutils.human_readable_bytes(stats.max_memory)))
@@ -146,13 +150,17 @@ class AbductionContractionMobileTest(AbductionContractionPerformanceTest):
         return 'abduction/contraction mobile'
 
     @property
+    def default_reasoners(self):
+        return Reasoners.mobile(Reasoners.supporting_task(ReasoningTask.NON_STANDARD))
+
+    @property
     def result_fields(self):
         return ['resource parsing', 'request parsing', 'reasoner init', 'reasoning', 'memory']
 
     def run_reasoner(self, reasoner, resource, request, logger):
 
         stats = reasoner.abduction_contraction(resource, request,
-                                               timeout=config.Reasoners.ABDUCTION_CONTRACTION_TIMEOUT)
+                                               timeout=Reasoners.ABDUCTION_CONTRACTION_TIMEOUT)
 
         logger.log(('Resource parsing {:.0f} ms | '
                     'Request parsing {:.0f} ms | '

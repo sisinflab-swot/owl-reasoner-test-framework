@@ -1,15 +1,45 @@
 import errno
-import re
-from os import path
+import os
 from typing import List, Optional, Union
 
 from src.pyutils import exc, fileutils
 from src.pyutils.proc import Benchmark, Task, find_executable
-from .owl import AbductionContractionResults, ConsistencyResults, OWLReasoner, OWLSyntax, ReasoningStats, TestMode
+from .java import JavaReasoner
+from .owl import (
+    OWLReasoner,
+    OWLSyntax,
+    ReasoningTask,
+    TestMode
+)
+from .results import AbductionContractionResults, ConsistencyResults, ReasoningStats
 
 
-class MiniME(OWLReasoner):
-    """MiniME reasoner wrapper."""
+class MiniMEJava(JavaReasoner):
+    """MiniME Java reasoner wrapper."""
+
+    # Public methods
+
+    def __init__(self, path: str, owl_tool_path: str, vm_opts: List[str]):
+        super(MiniMEJava, self).__init__(name='MiniME Java', path=path, owl_tool_path=owl_tool_path, vm_opts=vm_opts)
+
+    # Overrides
+
+    @property
+    def supported_tasks(self):
+        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
+
+    def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
+        exc.raise_if_not_found(resource_file, file_type=exc.FileType.FILE)
+        exc.raise_if_not_found(request_file, file_type=exc.FileType.FILE)
+
+        args = ['abduction-contraction', '-r', request_file, resource_file]
+        task = self._run(args, timeout=timeout, mode=mode)
+
+        return AbductionContractionResults.extract(task)
+
+
+class MiniMESwift(OWLReasoner):
+    """MiniME Swift reasoner wrapper."""
 
     # Overrides
 
@@ -25,6 +55,10 @@ class MiniME(OWLReasoner):
     def preferred_syntax(self):
         return OWLSyntax.RDFXML
 
+    @property
+    def supported_tasks(self):
+        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
+
     def classify(self, input_file, output_file=None, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
 
@@ -34,24 +68,24 @@ class MiniME(OWLReasoner):
             fileutils.remove(output_file)
             args.extend(['-o', output_file])
 
-        result = self._run(args, timeout=timeout, mode=mode)
+        task = self._run(args, timeout=timeout, mode=mode)
 
-        return extract_stats(result)
+        return ReasoningStats.extract(task)
 
     def consistency(self, input_file, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
 
         args = ['consistency', '-i', input_file]
-        result = self._run(args, timeout=timeout, mode=mode)
-        return extract_consistency_results(result)
+        task = self._run(args, timeout=timeout, mode=mode)
+        return ConsistencyResults.extract(task)
 
     def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(resource_file, file_type=exc.FileType.FILE)
         exc.raise_if_not_found(request_file, file_type=exc.FileType.FILE)
 
         args = ['abduction-contraction', '-i', resource_file, '-r', request_file]
-        result = self._run(args, timeout=timeout, mode=mode)
-        return extract_abduction_contraction_results(result)
+        task = self._run(args, timeout=timeout, mode=mode)
+        return AbductionContractionResults.extract(task)
 
     # Private methods
 
@@ -65,7 +99,7 @@ class MiniME(OWLReasoner):
         return result
 
 
-class MiniMEMobile(OWLReasoner):
+class MiniMESwiftMobile(OWLReasoner):
     """MiniME mobile reasoner wrapper."""
 
     # Lifecycle
@@ -86,7 +120,7 @@ class MiniMEMobile(OWLReasoner):
         exc.raise_if_not_found(project, file_type=exc.FileType.DIR)
         exc.raise_if_falsy(scheme=scheme, classification_test=classification_test, consistency_test=consistency_test)
 
-        super(MiniMEMobile, self).__init__(path=find_executable('xcodebuild'))
+        super(MiniMESwiftMobile, self).__init__(path=find_executable('xcodebuild'))
         self._project = project
         self._scheme = scheme
         self._classification_test = classification_test
@@ -107,26 +141,34 @@ class MiniMEMobile(OWLReasoner):
     def preferred_syntax(self):
         return OWLSyntax.RDFXML
 
+    @property
+    def supported_tasks(self):
+        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
+
+    @property
+    def is_mobile(self):
+        return True
+
     def classify(self, input_file, output_file=None, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
-        result = self._run(test=self._classification_test, resource=input_file, timeout=timeout)
-        return extract_stats(result)
+        task = self._run(test=self._classification_test, resource=input_file, timeout=timeout)
+        return ReasoningStats.extract(task)
 
     def consistency(self, input_file, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
-        result = self._run(test=self._consistency_test, resource=input_file, timeout=timeout)
-        return ConsistencyResults(consistent=True, stats=extract_stats(result))
+        task = self._run(test=self._consistency_test, resource=input_file, timeout=timeout)
+        return ConsistencyResults(consistent=True, stats=ReasoningStats.extract(task))
 
     def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(resource_file, file_type=exc.FileType.FILE)
         exc.raise_if_not_found(request_file, file_type=exc.FileType.FILE)
 
-        result = self._run(test=self._abduction_contraction_test,
-                           resource=resource_file,
-                           request=request_file,
-                           timeout=timeout)
+        task = self._run(test=self._abduction_contraction_test,
+                         resource=resource_file,
+                         request=request_file,
+                         timeout=timeout)
 
-        return extract_abduction_contraction_results(result)
+        return AbductionContractionResults.extract(task)
 
     # Private
 
@@ -136,10 +178,10 @@ class MiniMEMobile(OWLReasoner):
                 '-destination', 'platform=iOS,name={}'.format(self._detect_connected_device()),
                 '-only-testing:{}'.format(test),
                 'test-without-building',
-                'RESOURCE={}'.format(path.splitext(path.basename(resource))[0])]
+                'RESOURCE={}'.format(os.path.splitext(os.path.basename(resource))[0])]
 
         if request:
-            args.append('REQUEST={}'.format(path.splitext(path.basename(request))[0]))
+            args.append('REQUEST={}'.format(os.path.splitext(os.path.basename(request))[0]))
 
         task = Task(self._path, args=args)
         task.run(timeout=timeout)
@@ -158,76 +200,3 @@ class MiniMEMobile(OWLReasoner):
                 return components[0]
 
         exc.raise_ioerror(errno.ENODEV, message='No connected devices.')
-
-
-# Utility functions
-
-
-def extract_memory(result: Union[Task, Benchmark]) -> int:
-    """Extracts the peak memory for a reasoning task."""
-    if isinstance(result, Benchmark):
-        max_memory = result.max_memory
-    else:
-        res = re.search(r'Memory: (.*) B', result.stdout)
-        max_memory = int(res.group(1)) if res else 0
-
-    return max_memory
-
-
-def extract_stats(result: Union[Task, Benchmark]) -> ReasoningStats:
-    """Extract stats for a reasoning task."""
-    stdout = result.stdout
-    exc.raise_if_falsy(stdout=stdout)
-
-    res = re.search(r'Parsing: (.*) ms', stdout)
-    exc.raise_if_falsy(res=res)
-    parsing_ms = float(res.group(1))
-
-    res = re.search(r'Reasoning: (.*) ms', stdout)
-    exc.raise_if_falsy(res=res)
-    reasoning_ms = float(res.group(1))
-
-    max_memory = extract_memory(result)
-
-    return ReasoningStats(parsing_ms=parsing_ms, reasoning_ms=reasoning_ms, max_memory=max_memory)
-
-
-def extract_consistency_results(result: Union[Task, Benchmark]) -> ConsistencyResults:
-    """Extract the results of the consistency task."""
-    stats = extract_stats(result)
-
-    result = re.search(r'The ontology is (.*)\.', result.stdout)
-    exc.raise_if_falsy(result=result)
-    consistent = (result.group(1) == 'consistent')
-
-    return ConsistencyResults(consistent, stats)
-
-
-def extract_abduction_contraction_results(result) -> AbductionContractionResults:
-    """Extract the result of the abduction/contraction task by parsing stdout."""
-    stdout = result.stdout
-    exc.raise_if_falsy(stdout=stdout)
-
-    res = re.search(r'Resource parsing: (.*) ms', stdout)
-    exc.raise_if_falsy(res=res)
-    res_parsing_ms = float(res.group(1))
-
-    res = re.search(r'Request parsing: (.*) ms', stdout)
-    exc.raise_if_falsy(res=res)
-    req_parsing_ms = float(res.group(1))
-
-    res = re.search(r'Reasoner initialization: (.*) ms', stdout)
-    exc.raise_if_falsy(res=res)
-    init_ms = float(res.group(1))
-
-    res = re.search(r'Reasoning: (.*) ms', stdout)
-    exc.raise_if_falsy(res=res)
-    reasoning_ms = float(res.group(1))
-
-    max_memory = extract_memory(result)
-
-    return AbductionContractionResults(resource_parsing_ms=res_parsing_ms,
-                                       request_parsing_ms=req_parsing_ms,
-                                       init_ms=init_ms,
-                                       reasoning_ms=reasoning_ms,
-                                       max_memory=max_memory)
