@@ -267,7 +267,4 @@ $RECYCLE.BIN/
 
 # Project specific
 /.idea
-/bin
-/data
 /wrk
-/mobile/External
