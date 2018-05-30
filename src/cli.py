@@ -1,6 +1,5 @@
 import argparse
 
-from . import config
 from .config import Reasoners
 from .reasoners.owl import TestMode
 
@@ -112,7 +111,7 @@ def build_parser() -> argparse.ArgumentParser:
     group = help_parser.add_argument_group('Help and debug')
     group.add_argument('--debug',
                        help='Enable debug output.',
-                       action=_EnableDebugAction)
+                       action='store_true')
     group.add_argument('-h', '--help',
                        help='Show this help message and exit.',
                        action='help')
@@ -191,19 +190,3 @@ def build_parser() -> argparse.ArgumentParser:
     parser_info.set_defaults(func=info_sub)
 
     return main_parser
-
-
-# Private classes
-
-
-# noinspection PyProtectedMember
-class _EnableDebugAction(argparse._StoreTrueAction):
-    """Argparse action to enable debug output."""
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        debug = self.const
-        if debug:
-            config.DEBUG = True  # Respect cli argument.
-        else:
-            self.const = config.DEBUG  # Set cli argument to config value.
-        super(_EnableDebugAction, self).__call__(parser, namespace, values, option_string)

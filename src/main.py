@@ -12,6 +12,9 @@ def main() -> int:
         parser = cli.build_parser()
         args = parser.parse_args()
 
+        if args.debug:
+            config.DEBUG = True
+
         if not hasattr(args, 'func'):
             raise ValueError('Invalid argument(s). Please run "test -h" or "test <subcommand> -h" for help.')
 

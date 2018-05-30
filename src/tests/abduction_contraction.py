@@ -4,7 +4,7 @@ from subprocess import TimeoutExpired
 from typing import List, Optional
 
 from src.config import Reasoners
-from src.reasoners.owl import OWLOntology, OWLReasoner, OWLSyntax, ReasoningTask, TestMode
+from src.reasoners.owl import OWLReasoner, OWLSyntax, ReasoningTask, TestMode
 from src.pyutils import echo, fileutils
 from src.pyutils.logger import Logger
 from .test import Test
@@ -27,8 +27,8 @@ class AbductionContractionPerformanceTest(Test):
     @abstractmethod
     def run_reasoner(self,
                      reasoner: OWLReasoner,
-                     resource: OWLOntology,
-                     request: OWLOntology,
+                     resource: str,
+                     request: str,
                      logger: Logger) -> List[str]:
         """Called every run, for each reasoner and each ontology.
 

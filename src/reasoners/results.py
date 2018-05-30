@@ -13,35 +13,6 @@ class ReasoningStats:
         self.reasoning_ms = reasoning_ms
         self.max_memory = max_memory
 
-    @classmethod
-    def extract(cls, task: Union[Task, Benchmark]) -> 'ReasoningStats':
-        """Extract stats for a reasoning task."""
-        stdout = task.stdout
-        exc.raise_if_falsy(stdout=stdout)
-
-        res = re.search(r'Parsing: (.*) ms', stdout)
-        exc.raise_if_falsy(res=res)
-        parsing_ms = float(res.group(1))
-
-        res = re.search(r'Reasoning: (.*) ms', stdout)
-        exc.raise_if_falsy(res=res)
-        reasoning_ms = float(res.group(1))
-
-        max_memory = cls.extract_memory(task)
-
-        return ReasoningStats(parsing_ms=parsing_ms, reasoning_ms=reasoning_ms, max_memory=max_memory)
-
-    @classmethod
-    def extract_memory(cls, task: Union[Task, Benchmark]) -> int:
-        """Extracts the peak memory for a reasoning task."""
-        if isinstance(task, Benchmark):
-            max_memory = task.max_memory
-        else:
-            res = re.search(r'Memory: (.*) B', task.stdout)
-            max_memory = int(res.group(1)) if res else 0
-
-        return max_memory
-
 
 class ConsistencyResults:
     """Contains results for the consistency task."""
@@ -49,17 +20,6 @@ class ConsistencyResults:
     def __init__(self, consistent: bool, stats: ReasoningStats):
         self.consistent = consistent
         self.stats = stats
-
-    @classmethod
-    def extract(cls, task: Union[Task, Benchmark]) -> 'ConsistencyResults':
-        """Extract the results of the consistency task."""
-        stats = ReasoningStats.extract(task)
-
-        result = re.search(r'The ontology is (.*)\.', task.stdout)
-        exc.raise_if_falsy(result=result)
-        consistent = (result.group(1) == 'consistent')
-
-        return ConsistencyResults(consistent, stats)
 
 
 class AbductionContractionResults(object):
@@ -77,9 +37,28 @@ class AbductionContractionResults(object):
         self.reasoning_ms = reasoning_ms
         self.max_memory = max_memory
 
-    @classmethod
-    def extract(cls, task: Union[Task, Benchmark]) -> 'AbductionContractionResults':
-        """Extract the result of the abduction/contraction task by parsing stdout."""
+
+class ResultsParser:
+    """Parses reasoning task results."""
+
+    # Public methods
+
+    def parse_classification_results(self, task: Union[Task, Benchmark]) -> ReasoningStats:
+        """Parse the results of the classification task."""
+        return self._parse_reasoning_stats(task)
+
+    def parse_consistency_results(self, task: Union[Task, Benchmark]) -> 'ConsistencyResults':
+        """Parse the results of the consistency task."""
+        stats = self._parse_reasoning_stats(task)
+
+        result = re.search(r'The ontology is (.*)\.', task.stdout)
+        exc.raise_if_falsy(result=result)
+        consistent = (result.group(1) == 'consistent')
+
+        return ConsistencyResults(consistent, stats)
+
+    def parse_abduction_contraction_results(self, task: Union[Task, Benchmark]) -> 'AbductionContractionResults':
+        """Parse the result of the abduction/contraction task by parsing stdout."""
         stdout = task.stdout
         exc.raise_if_falsy(stdout=stdout)
 
@@ -99,10 +78,39 @@ class AbductionContractionResults(object):
         exc.raise_if_falsy(res=res)
         reasoning_ms = float(res.group(1))
 
-        max_memory = ReasoningStats.extract_memory(task)
+        max_memory = self._parse_memory(task)
 
         return AbductionContractionResults(resource_parsing_ms=res_parsing_ms,
                                            request_parsing_ms=req_parsing_ms,
                                            init_ms=init_ms,
                                            reasoning_ms=reasoning_ms,
                                            max_memory=max_memory)
+
+    # Protected methods
+
+    def _parse_reasoning_stats(self, task: Union[Task, Benchmark]) -> ReasoningStats:
+        """Parse stats for a reasoning task."""
+        stdout = task.stdout
+        exc.raise_if_falsy(stdout=stdout)
+
+        res = re.search(r'Parsing: (.*) ms', stdout)
+        exc.raise_if_falsy(res=res)
+        parsing_ms = float(res.group(1))
+
+        res = re.search(r'Reasoning: (.*) ms', stdout)
+        exc.raise_if_falsy(res=res)
+        reasoning_ms = float(res.group(1))
+
+        max_memory = self._parse_memory(task)
+
+        return ReasoningStats(parsing_ms=parsing_ms, reasoning_ms=reasoning_ms, max_memory=max_memory)
+
+    def _parse_memory(self, task: Union[Task, Benchmark]) -> int:
+        """Parse the peak memory for a reasoning task."""
+        if isinstance(task, Benchmark):
+            max_memory = task.max_memory
+        else:
+            res = re.search(r'Memory: (.*) B', task.stdout)
+            max_memory = int(res.group(1)) if res else 0
+
+        return max_memory

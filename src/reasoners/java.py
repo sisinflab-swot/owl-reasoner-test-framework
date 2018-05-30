@@ -1,10 +1,8 @@
-import os
 from typing import List, Optional, Union
 
-from src.pyutils import exc, fileutils
-from src.pyutils.proc import Benchmark, Jar, OutputAction
-from .owl import OWLReasoner, OWLSyntax, ReasoningTask, TestMode
-from .results import ConsistencyResults, ReasoningStats
+from src.pyutils import exc
+from src.pyutils.proc import Benchmark, Jar
+from .owl import MetaArgs, OWLReasoner, OWLSyntax, ReasoningTask, TestMode
 
 
 class JavaReasoner(OWLReasoner):
@@ -38,52 +36,28 @@ class JavaReasoner(OWLReasoner):
         exc.raise_if_falsy(name=name)
         exc.raise_if_not_found(owl_tool_path, file_type=exc.FileType.FILE)
 
-        super(JavaReasoner, self).__init__(path)
-
+        super(JavaReasoner, self).__init__(path, owl_tool_path, vm_opts)
         self.__name = name
-        self.__owl_tool_path = owl_tool_path
-        self.__vm_opts = vm_opts
 
-    def classify(self, input_file, output_file=None, timeout=None, mode=TestMode.CORRECTNESS):
-        exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
+    def args(self, task: str, mode: str) -> List[str]:
+        if task == ReasoningTask.CLASSIFICATION:
+            args = ['classification']
+            if mode == TestMode.CORRECTNESS:
+                args.extend(['-o', MetaArgs.OUTPUT])
+            args.append(MetaArgs.INPUT)
+        elif task == ReasoningTask.CONSISTENCY:
+            args = ['consistency', MetaArgs.INPUT]
+        else:
+            args = []
 
-        args = ['classification']
-        classification_out = None
-
-        if mode == TestMode.CORRECTNESS:
-            classification_out = os.path.splitext(output_file)[0] + '.owl'
-
-            fileutils.remove(output_file)
-            fileutils.remove(classification_out)
-
-            args.extend(['-o', classification_out])
-
-        args.append(input_file)
-        task = self._run(args, timeout=timeout, mode=mode)
-
-        if mode == TestMode.CORRECTNESS:
-            args = ['print-tbox', '-o', output_file, classification_out]
-            jar = Jar(self.__owl_tool_path, jar_args=args, vm_opts=self.__vm_opts, output_action=OutputAction.DISCARD)
-            jar.run()
-
-        return ReasoningStats.extract(task)
-
-    def consistency(self, input_file, timeout=None, mode=TestMode.CORRECTNESS):
-        exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
-        task = self._run(['consistency', input_file], timeout=timeout, mode=mode)
-        return ConsistencyResults.extract(task)
-
-    def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
-        raise NotImplementedError
-
-    # Private methods
+        return args
 
     def _run(self, args: List[str], timeout: Optional[float], mode: str) -> Union[Jar, Benchmark]:
         if mode == TestMode.MEMORY:
-            jar = Jar(self._path, jar_args=args, vm_opts=['-Xms1m'] + self.__vm_opts)
+            jar = Jar(self.path, jar_args=args, vm_opts=['-Xms1m'] + self.vm_opts)
             result = Benchmark(jar)
         else:
-            result = Jar(self._path, jar_args=args, vm_opts=self.__vm_opts)
+            result = Jar(self.path, jar_args=args, vm_opts=self.vm_opts)
 
         result.run(timeout=timeout)
 

@@ -1,17 +1,18 @@
 import errno
 import os
-from typing import List, Optional, Union
+from typing import List, Optional
 
-from src.pyutils import exc, fileutils
-from src.pyutils.proc import Benchmark, Task, find_executable
+from src.pyutils import exc
+from src.pyutils.proc import Task, find_executable
 from .java import JavaReasoner
 from .owl import (
+    MetaArgs,
     OWLReasoner,
     OWLSyntax,
     ReasoningTask,
     TestMode
 )
-from .results import AbductionContractionResults, ConsistencyResults, ReasoningStats
+from .results import ConsistencyResults
 
 
 class MiniMEJava(JavaReasoner):
@@ -28,14 +29,11 @@ class MiniMEJava(JavaReasoner):
     def supported_tasks(self):
         return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
 
-    def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
-        exc.raise_if_not_found(resource_file, file_type=exc.FileType.FILE)
-        exc.raise_if_not_found(request_file, file_type=exc.FileType.FILE)
-
-        args = ['abduction-contraction', '-r', request_file, resource_file]
-        task = self._run(args, timeout=timeout, mode=mode)
-
-        return AbductionContractionResults.extract(task)
+    def args(self, task: str, mode: str) -> List[str]:
+        if task == ReasoningTask.NON_STANDARD:
+            return ['abduction-contraction', '-r', MetaArgs.REQUEST, MetaArgs.INPUT]
+        else:
+            return super(MiniMEJava, self).args(task, mode)
 
 
 class MiniMESwift(OWLReasoner):
@@ -59,44 +57,17 @@ class MiniMESwift(OWLReasoner):
     def supported_tasks(self):
         return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
 
-    def classify(self, input_file, output_file=None, timeout=None, mode=TestMode.CORRECTNESS):
-        exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
+    def args(self, task: str, mode: str) -> List[str]:
+        if task == ReasoningTask.CLASSIFICATION:
+            args = ['classification', '-i', MetaArgs.INPUT]
+            if mode == TestMode.CORRECTNESS:
+                args.extend(['-o', MetaArgs.OUTPUT])
+        elif task == ReasoningTask.CONSISTENCY:
+            args = ['consistency', '-i', MetaArgs.INPUT]
+        else:
+            args = ['abduction-contraction', '-i', MetaArgs.INPUT, '-r', MetaArgs.REQUEST]
 
-        args = ['classification', '-i', input_file]
-
-        if mode == TestMode.CORRECTNESS:
-            fileutils.remove(output_file)
-            args.extend(['-o', output_file])
-
-        task = self._run(args, timeout=timeout, mode=mode)
-
-        return ReasoningStats.extract(task)
-
-    def consistency(self, input_file, timeout=None, mode=TestMode.CORRECTNESS):
-        exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
-
-        args = ['consistency', '-i', input_file]
-        task = self._run(args, timeout=timeout, mode=mode)
-        return ConsistencyResults.extract(task)
-
-    def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
-        exc.raise_if_not_found(resource_file, file_type=exc.FileType.FILE)
-        exc.raise_if_not_found(request_file, file_type=exc.FileType.FILE)
-
-        args = ['abduction-contraction', '-i', resource_file, '-r', request_file]
-        task = self._run(args, timeout=timeout, mode=mode)
-        return AbductionContractionResults.extract(task)
-
-    # Private methods
-
-    def _run(self, args: List[str], timeout: Optional[float], mode: str) -> Union[Task, Benchmark]:
-        result = Task(self._path, args=args)
-
-        if mode == TestMode.MEMORY:
-            result = Benchmark(result)
-
-        result.run(timeout=timeout)
-        return result
+        return args
 
 
 class MiniMESwiftMobile(OWLReasoner):
@@ -120,7 +91,7 @@ class MiniMESwiftMobile(OWLReasoner):
         exc.raise_if_not_found(project, file_type=exc.FileType.DIR)
         exc.raise_if_falsy(scheme=scheme, classification_test=classification_test, consistency_test=consistency_test)
 
-        super(MiniMESwiftMobile, self).__init__(path=find_executable('xcodebuild'))
+        super(MiniMESwiftMobile, self).__init__(find_executable('xcodebuild'), None, None)
         self._project = project
         self._scheme = scheme
         self._classification_test = classification_test
@@ -149,15 +120,18 @@ class MiniMESwiftMobile(OWLReasoner):
     def is_mobile(self):
         return True
 
+    def args(self, task: str, mode: str) -> List[str]:
+        return []
+
     def classify(self, input_file, output_file=None, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
         task = self._run(test=self._classification_test, resource=input_file, timeout=timeout)
-        return ReasoningStats.extract(task)
+        return self.results_parser.parse_reasoning_stats(task)
 
     def consistency(self, input_file, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(input_file, file_type=exc.FileType.FILE)
         task = self._run(test=self._consistency_test, resource=input_file, timeout=timeout)
-        return ConsistencyResults(consistent=True, stats=ReasoningStats.extract(task))
+        return ConsistencyResults(consistent=True, stats=self.results_parser.parse_reasoning_stats(task))
 
     def abduction_contraction(self, resource_file, request_file, timeout=None, mode=TestMode.CORRECTNESS):
         exc.raise_if_not_found(resource_file, file_type=exc.FileType.FILE)
@@ -168,7 +142,7 @@ class MiniMESwiftMobile(OWLReasoner):
                          request=request_file,
                          timeout=timeout)
 
-        return AbductionContractionResults.extract(task)
+        return self.results_parser.parse_abduction_contraction_results(task)
 
     # Private
 
@@ -183,7 +157,7 @@ class MiniMESwiftMobile(OWLReasoner):
         if request:
             args.append('REQUEST={}'.format(os.path.splitext(os.path.basename(request))[0]))
 
-        task = Task(self._path, args=args)
+        task = Task(self.path, args=args)
         task.run(timeout=timeout)
 
         return task
