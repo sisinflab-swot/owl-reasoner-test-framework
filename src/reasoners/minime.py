@@ -15,13 +15,82 @@ from .owl import (
 from .results import ConsistencyResults
 
 
-class MiniMEJava(JavaReasoner):
-    """MiniME Java reasoner wrapper."""
+class MiniMEObjC3(OWLReasoner):
+    """Mini-ME Objective-C 3.0 reasoner wrapper."""
+
+    # Public methods
+
+    @classmethod
+    def get_args(cls, task: str, mode: str) -> List[str]:
+        if task == ReasoningTask.CLASSIFICATION:
+            args = ['classification', '-i', MetaArgs.INPUT]
+
+            if mode == TestMode.CORRECTNESS:
+                args.extend(['-o', MetaArgs.OUTPUT])
+        elif task == ReasoningTask.CONSISTENCY:
+            args = ['coherence', '-i', MetaArgs.INPUT]
+        else:
+            args = ['abduction-contraction', '-i', MetaArgs.INPUT, '-r', MetaArgs.REQUEST]
+
+        if mode != TestMode.CORRECTNESS:
+            args.append('-q')
+
+        args.append('-b')
+
+        return args
+
+    def __init__(self, path: str):
+        super(MiniMEObjC3, self).__init__(path=path, owl_tool_path=None, vm_opts=None)
+
+    # Overrides
+
+    @property
+    def name(self):
+        return 'Mini-ME ObjC 3.0'
+
+    @property
+    def supported_syntaxes(self):
+        return [OWLSyntax.RDFXML]
+
+    @property
+    def preferred_syntax(self):
+        return OWLSyntax.RDFXML
+
+    @property
+    def supported_tasks(self):
+        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
+
+    def args(self, task: str, mode: str) -> List[str]:
+        return self.__class__.get_args(task=task, mode=mode)
+
+
+class MiniMEJava3(JavaReasoner):
+    """MiniME Java 3.0 reasoner wrapper."""
+
+    # Public methods
+
+    def __init__(self, path: str, vm_opts: List[str]):
+        super(MiniMEJava3, self).__init__(name='Mini-ME Java 3.0', path=path,
+                                          owl_tool_path=None, vm_opts=vm_opts)
+
+    # Overrides
+
+    @property
+    def supported_tasks(self):
+        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
+
+    def args(self, task: str, mode: str) -> List[str]:
+        return MiniMEObjC3.get_args(task=task, mode=mode)
+
+
+class MiniMEJava2(JavaReasoner):
+    """MiniME Java 2.0 reasoner wrapper."""
 
     # Public methods
 
     def __init__(self, path: str, owl_tool_path: str, vm_opts: List[str]):
-        super(MiniMEJava, self).__init__(name='MiniME Java', path=path, owl_tool_path=owl_tool_path, vm_opts=vm_opts)
+        super(MiniMEJava2, self).__init__(name='Mini-ME Java 2.0', path=path,
+                                          owl_tool_path=owl_tool_path, vm_opts=vm_opts)
 
     # Overrides
 
@@ -33,7 +102,7 @@ class MiniMEJava(JavaReasoner):
         if task == ReasoningTask.NON_STANDARD:
             return ['abduction-contraction', '-r', MetaArgs.REQUEST, MetaArgs.INPUT]
         else:
-            return super(MiniMEJava, self).args(task, mode)
+            return super(MiniMEJava2, self).args(task, mode)
 
 
 class MiniMESwift(OWLReasoner):
@@ -43,7 +112,7 @@ class MiniMESwift(OWLReasoner):
 
     @property
     def name(self):
-        return 'MiniME Swift'
+        return 'Mini-ME Swift'
 
     @property
     def supported_syntaxes(self):
@@ -102,7 +171,7 @@ class MiniMESwiftMobile(OWLReasoner):
 
     @property
     def name(self):
-        return 'MiniME Swift mobile'
+        return 'Mini-ME Swift mobile'
 
     @property
     def supported_syntaxes(self):

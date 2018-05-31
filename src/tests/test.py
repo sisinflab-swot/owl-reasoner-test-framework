@@ -79,6 +79,7 @@ class Test:
                 exc.raise_if_not_found(xml_dir, file_type=exc.FileType.DIR)
 
                 onto_names = [f for f in listdir(func_dir) if f.endswith('.owl')]
+                onto_names.sort()
 
                 # Hello
                 echo.pretty(

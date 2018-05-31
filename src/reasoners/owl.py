@@ -43,6 +43,7 @@ class MetaArgs:
     @staticmethod
     def replace(args: List[str], input_arg: str,
                 output_arg: Optional[str] = None, request_arg: Optional[str] = None) -> List[str]:
+        """Replace meta-args with actual ones."""
         replacements = {
             MetaArgs.INPUT: input_arg,
             MetaArgs.OUTPUT: output_arg,

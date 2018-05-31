@@ -26,7 +26,7 @@ class JavaReasoner(OWLReasoner):
 
     # Public methods
 
-    def __init__(self, name: str, path: str, owl_tool_path: str, vm_opts: List[str]):
+    def __init__(self, name: str, path: str, owl_tool_path: Optional[str], vm_opts: List[str]):
         """
         :param name : Name of the reasoner.
         :param path : Path of the reasoner jar.
@@ -34,7 +34,8 @@ class JavaReasoner(OWLReasoner):
         :param vm_opts : Options for the Java VM.
         """
         exc.raise_if_falsy(name=name)
-        exc.raise_if_not_found(owl_tool_path, file_type=exc.FileType.FILE)
+        if owl_tool_path:
+            exc.raise_if_not_found(owl_tool_path, file_type=exc.FileType.FILE)
 
         super(JavaReasoner, self).__init__(path, owl_tool_path, vm_opts)
         self.__name = name

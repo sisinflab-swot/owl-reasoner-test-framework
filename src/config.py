@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 from .reasoners.owl import OWLReasoner
 from .reasoners.java import JavaReasoner
 from .reasoners.konclude import Konclude
-from .reasoners.minime import MiniMEJava, MiniMESwift, MiniMESwiftMobile
+from .reasoners.minime import MiniMEObjC3, MiniMEJava2, MiniMEJava3, MiniMESwift, MiniMESwiftMobile
 
 
 DEBUG = False
@@ -24,8 +24,10 @@ class Paths:
     FACT = path.join(FACT_DIR, 'factcli.jar')
     HERMIT = path.join(BIN_DIR, 'HermiT', 'hermitcli.jar')
     KONCLUDE = path.join(BIN_DIR, 'Konclude', 'Binaries', 'Konclude')
+    MINIME_OBJC_3 = path.join(BIN_DIR, 'MiniMEObjC3', 'MiniME-macOS-cli')
     MINIME_SWIFT = path.join(BIN_DIR, 'MiniMESwift', 'MiniME-cli')
-    MINIME_JAVA = path.join(BIN_DIR, 'MiniMEJava', 'minimecli.jar')
+    MINIME_JAVA_2 = path.join(BIN_DIR, 'MiniMEJava2', 'minimecli.jar')
+    MINIME_JAVA_3 = path.join(BIN_DIR, 'MiniMEJava3', 'minime-java-3.0.jar')
     OWLTOOL = path.join(BIN_DIR, 'OwlTool', 'owltool.jar')
     TROWL = path.join(BIN_DIR, 'TrOWL', 'trowlcli.jar')
 
@@ -69,6 +71,8 @@ class Reasoners:
                         owl_tool_path=Paths.OWLTOOL,
                         vm_opts=COMMON_VM_OPTS)
 
+    MINIME_OBJC_3 = MiniMEObjC3(path=Paths.MINIME_OBJC_3)
+
     MINIME_SWIFT = MiniMESwift(path=Paths.MINIME_SWIFT)
 
     MINIME_SWIFT_MOBILE = MiniMESwiftMobile(project=Paths.XCODE_PROJECT,
@@ -77,16 +81,19 @@ class Reasoners:
                                             consistency_test=Mobile.CONSISTENCY_TEST,
                                             abduction_contraction_test=Mobile.ABDUCTION_CONTRACTION_TEST)
 
-    MINIME_JAVA = MiniMEJava(path=Paths.MINIME_JAVA,
-                             owl_tool_path=Paths.OWLTOOL,
-                             vm_opts=COMMON_VM_OPTS)
+    MINIME_JAVA_2 = MiniMEJava2(path=Paths.MINIME_JAVA_2,
+                                owl_tool_path=Paths.OWLTOOL,
+                                vm_opts=COMMON_VM_OPTS)
+
+    MINIME_JAVA_3 = MiniMEJava3(path=Paths.MINIME_JAVA_3, vm_opts=COMMON_VM_OPTS)
 
     TROWL = JavaReasoner(name='TrOWL',
                          path=Paths.TROWL,
                          owl_tool_path=Paths.OWLTOOL,
                          vm_opts=COMMON_VM_OPTS)
 
-    ALL = [FACT, HERMIT, KONCLUDE, MINIME_JAVA, MINIME_SWIFT, MINIME_SWIFT_MOBILE, TROWL]
+    ALL = [FACT, HERMIT, KONCLUDE, MINIME_JAVA_2, MINIME_JAVA_3,
+           MINIME_OBJC_3, MINIME_SWIFT, MINIME_SWIFT_MOBILE, TROWL]
 
     # Public methods
 
