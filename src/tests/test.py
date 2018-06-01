@@ -1,4 +1,7 @@
 import csv
+import re
+import tempfile
+import time
 from os import listdir, path
 from abc import ABCMeta, abstractmethod
 from subprocess import TimeoutExpired
@@ -7,6 +10,7 @@ from typing import Dict, List, Optional
 from src.config import DEBUG, Paths, Reasoners
 from src.reasoners.owl import OWLOntology, OWLReasoner, OWLSyntax
 from src.pyutils import echo, exc, fileutils
+from src.pyutils.decorators import cached_property
 from src.pyutils.logger import Logger
 
 
@@ -34,6 +38,28 @@ class Test:
         """Runs test over a single ontology."""
         pass
 
+    @cached_property
+    def work_dir(self) -> str:
+        name = re.sub(r"[^\w\s]", '', self.name)
+        name = re.sub(r"\s+", '_', name)
+        prefix = time.strftime('{}_%Y%m%d_%H%M%S_'.format(name))
+        fileutils.create_dir(Paths.RESULTS_DIR)
+        return tempfile.mkdtemp(dir=Paths.RESULTS_DIR, prefix=prefix)
+
+    @cached_property
+    def temp_dir(self) -> str:
+        new_dir = path.join(self.work_dir, 'temp')
+        fileutils.create_dir(new_dir)
+        return new_dir
+
+    @cached_property
+    def log_path(self) -> str:
+        return path.join(self.work_dir, 'log.txt')
+
+    @cached_property
+    def csv_path(self) -> str:
+        return path.join(self.work_dir, 'results.csv')
+
     def __init__(self,
                  datasets: Optional[List[str]] = None,
                  reasoners: Optional[List[str]] = None,
@@ -49,6 +75,9 @@ class Test:
         else:
             self._reasoners = self.default_reasoners
 
+    def clear_temp(self) -> None:
+        fileutils.remove_dir_contents(self.temp_dir)
+
     def start(self, resume_ontology: Optional[str] = None):
         """Starts the test."""
         data_dir = Paths.DATA_DIR
@@ -60,11 +89,7 @@ class Test:
             datasets = [path.join(data_dir, d) for d in listdir(data_dir)]
             datasets = [d for d in datasets if path.isdir(d)]
 
-        with Logger(Paths.LOG) as logger, open(Paths.RESULTS, mode='w') as csv_file:
-
-            fileutils.create_dir(Paths.WRK_DIR)
-            fileutils.create_dir(Paths.TEMP_DIR)
-            fileutils.remove_dir_contents(Paths.TEMP_DIR)
+        with Logger(self.log_path) as logger, open(self.csv_path, mode='w') as csv_file:
 
             logger.clear()
             csv_writer = csv.writer(csv_file)

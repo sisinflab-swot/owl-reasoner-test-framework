@@ -2,7 +2,7 @@ import filecmp
 import os
 from subprocess import TimeoutExpired
 
-from src.config import Paths, Reasoners
+from src.config import Reasoners
 from src.reasoners.owl import ReasoningTask, TestMode
 from src.pyutils import echo, fileutils
 from .test import Test, StandardPerformanceTest
@@ -30,12 +30,11 @@ class ClassificationCorrectnessTest(Test):
         csv_writer.writerow(csv_header)
 
     def run(self, onto_name, ontologies, logger, csv_writer):
-
-        fileutils.remove_dir_contents(Paths.TEMP_DIR)
+        self.clear_temp()
 
         reference = Reasoners.REFERENCE
-        reasoner_out = os.path.join(Paths.TEMP_DIR, 'reasoner.txt')
-        reference_out = os.path.join(Paths.TEMP_DIR, 'reference.txt')
+        reasoner_out = os.path.join(self.temp_dir, 'reasoner.txt')
+        reference_out = os.path.join(self.temp_dir, 'reference.txt')
 
         csv_row = [onto_name]
 

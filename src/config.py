@@ -17,8 +17,7 @@ class Paths:
     BIN_DIR = path.join(DIR, 'bin')
     DATA_DIR = path.join(DIR, 'data')
     MOBILE_DIR = path.join(DIR, 'mobile')
-    WRK_DIR = path.join(DIR, 'wrk')
-    TEMP_DIR = path.join(WRK_DIR, 'temp')
+    RESULTS_DIR = path.join(DIR, 'results')
 
     FACT_DIR = path.join(BIN_DIR, 'Fact++')
     FACT = path.join(FACT_DIR, 'factcli.jar')
@@ -31,8 +30,6 @@ class Paths:
     OWLTOOL = path.join(BIN_DIR, 'OwlTool', 'owltool.jar')
     TROWL = path.join(BIN_DIR, 'TrOWL', 'trowlcli.jar')
 
-    LOG = path.join(WRK_DIR, 'log.txt')
-    RESULTS = path.join(WRK_DIR, 'results.csv')
     XCODE_PROJECT = path.join(MOBILE_DIR, 'MiniME-mobile.xcodeproj')
 
 
