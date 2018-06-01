@@ -92,6 +92,8 @@ class Reasoners:
                          owl_tool_path=Paths.OWLTOOL,
                          vm_opts=COMMON_VM_OPTS)
 
+    REFERENCE = KONCLUDE
+
     ALL = [FACT, HERMIT, KONCLUDE, MINIME_JAVA_2, MINIME_JAVA_3,
            MINIME_OBJC_3, MINIME_SWIFT, MINIME_SWIFT_MOBILE, TROWL]
 

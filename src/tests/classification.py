@@ -24,7 +24,7 @@ class ClassificationCorrectnessTest(Test):
 
         csv_header = ['Ontology']
 
-        for reasoner in [r for r in self._reasoners if r.name != Reasoners.MINIME_SWIFT.name]:
+        for reasoner in [r for r in self._reasoners if r.name != Reasoners.REFERENCE.name]:
             csv_header.append(reasoner.name)
 
         csv_writer.writerow(csv_header)
@@ -33,27 +33,27 @@ class ClassificationCorrectnessTest(Test):
 
         fileutils.remove_dir_contents(Paths.TEMP_DIR)
 
-        minime = Reasoners.MINIME_SWIFT
+        reference = Reasoners.REFERENCE
+        reasoner_out = os.path.join(Paths.TEMP_DIR, 'reasoner.txt')
         reference_out = os.path.join(Paths.TEMP_DIR, 'reference.txt')
-        minime_out = os.path.join(Paths.TEMP_DIR, 'minime.txt')
 
         csv_row = [onto_name]
 
         # Classify
-        logger.log('{}: '.format(minime.name), endl=False)
+        logger.log('{}: '.format(reference.name), endl=False)
         logger.indent_level += 1
 
-        minime.classify(ontologies[minime.preferred_syntax].path,
-                        output_file=minime_out,
-                        timeout=Reasoners.CLASSIFICATION_TIMEOUT)
+        reference.classify(ontologies[reference.preferred_syntax].path,
+                           output_file=reference_out,
+                           timeout=Reasoners.CLASSIFICATION_TIMEOUT)
         logger.log('done', color=echo.Color.GREEN)
 
-        for reasoner in [r for r in self._reasoners if r.name != minime.name]:
+        for reasoner in [r for r in self._reasoners if r.name != reference.name]:
             logger.log('{}: '.format(reasoner.name), endl=False)
 
             try:
                 reasoner.classify(ontologies[reasoner.preferred_syntax].path,
-                                  output_file=reference_out,
+                                  output_file=reasoner_out,
                                   timeout=Reasoners.CLASSIFICATION_TIMEOUT)
             except TimeoutExpired:
                 result = 'timeout'
@@ -62,7 +62,7 @@ class ClassificationCorrectnessTest(Test):
                 result = 'error'
                 color = echo.Color.RED
             else:
-                if filecmp.cmp(reference_out, minime_out, shallow=False):
+                if filecmp.cmp(reasoner_out, reference_out, shallow=False):
                     result = 'same'
                     color = echo.Color.GREEN
                 else:
