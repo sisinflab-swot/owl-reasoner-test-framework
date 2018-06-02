@@ -1,5 +1,6 @@
 import argparse
 
+from . import config
 from .config import Reasoners
 from .reasoners.owl import TestMode
 
@@ -27,80 +28,20 @@ from .tests.consistency import (
 )
 
 
-# Subcommands
-
-
-def abduction_contraction_sub(args) -> int:
-    datasets = args.datasets if args.datasets else ['sisinflab']
-    {
-        TestMode.CORRECTNESS: NotImplementedTest(),
-
-        TestMode.TIME: AbductionContractionTimeTest(datasets=datasets,
-                                                    reasoners=args.reasoners,
-                                                    iterations=Reasoners.ABDUCTION_CONTRACTION_ITERATIONS),
-
-        TestMode.MEMORY: AbductionContractionMemoryTest(datasets=datasets,
-                                                        reasoners=args.reasoners,
-                                                        iterations=Reasoners.ABDUCTION_CONTRACTION_ITERATIONS),
-
-        TestMode.MOBILE: AbductionContractionMobileTest(datasets=datasets,
-                                                        reasoners=args.reasoners,
-                                                        iterations=Reasoners.ABDUCTION_CONTRACTION_ITERATIONS)
-    }[args.mode].start(args.resume_after)
-    return 0
-
-
-def classification_sub(args) -> int:
-    {
-        TestMode.CORRECTNESS: ClassificationCorrectnessTest(datasets=args.datasets,
-                                                            reasoners=args.reasoners),
-
-        TestMode.TIME: ClassificationTimeTest(datasets=args.datasets,
-                                              reasoners=args.reasoners,
-                                              all_syntaxes=args.all_syntaxes,
-                                              iterations=Reasoners.CLASSIFICATION_ITERATIONS),
-
-        TestMode.MEMORY: ClassificationMemoryTest(datasets=args.datasets,
-                                                  reasoners=args.reasoners,
-                                                  all_syntaxes=args.all_syntaxes,
-                                                  iterations=Reasoners.CLASSIFICATION_ITERATIONS),
-
-        TestMode.MOBILE: ClassificationMobileTest(datasets=args.datasets,
-                                                  reasoners=args.reasoners,
-                                                  iterations=Reasoners.CLASSIFICATION_ITERATIONS)
-    }[args.mode].start(args.resume_after)
-    return 0
-
-
-def consistency_sub(args) -> int:
-    {
-        TestMode.CORRECTNESS: ConsistencyCorrectnessTest(datasets=args.datasets,
-                                                         reasoners=args.reasoners),
-
-        TestMode.TIME: ConsistencyTimeTest(datasets=args.datasets,
-                                           reasoners=args.reasoners,
-                                           all_syntaxes=args.all_syntaxes,
-                                           iterations=Reasoners.CONSISTENCY_ITERATIONS),
-
-        TestMode.MEMORY: ConsistencyMemoryTest(datasets=args.datasets,
-                                               reasoners=args.reasoners,
-                                               all_syntaxes=args.all_syntaxes,
-                                               iterations=Reasoners.CONSISTENCY_ITERATIONS),
-
-        TestMode.MOBILE: ConsistencyMobileTest(datasets=args.datasets,
-                                               reasoners=args.reasoners,
-                                               iterations=Reasoners.CONSISTENCY_ITERATIONS)
-    }[args.mode].start(args.resume_after)
-    return 0
-
-
-def info_sub(args) -> int:
-    InfoTest(datasets=args.datasets,
-             reasoners=args.reasoners).start(args.resume_after)
-    return 0
-
-
 # CLI parser
+
+
+def process_args() -> int:
+    """Run actions based on CLI arguments."""
+    args = build_parser().parse_args()
+
+    if args.debug:
+        config.DEBUG = True
+
+    if not hasattr(args, 'func'):
+        raise ValueError('Invalid argument(s). Please run "test -h" or "test <subcommand> -h" for help.')
+
+    return args.func(args)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -135,6 +76,10 @@ def build_parser() -> argparse.ArgumentParser:
     group.add_argument('-r', '--reasoners',
                        nargs='+',
                        help='Desired reasoners.')
+    group.add_argument('-n', '--num-iterations',
+                       type=positive_int,
+                       default=Reasoners.DEFAULT_ITERATIONS,
+                       help='Number of iterations for each test.')
     group.add_argument('-f', '--resume-after',
                        help='Resume the test after the specified ontology.')
     group.add_argument('-a', '--all-syntaxes',
@@ -190,3 +135,86 @@ def build_parser() -> argparse.ArgumentParser:
     parser_info.set_defaults(func=info_sub)
 
     return main_parser
+
+
+# Subcommands
+
+
+def abduction_contraction_sub(args) -> int:
+    datasets = args.datasets if args.datasets else ['sisinflab']
+    {
+        TestMode.CORRECTNESS: NotImplementedTest(),
+
+        TestMode.TIME: AbductionContractionTimeTest(datasets=datasets,
+                                                    reasoners=args.reasoners,
+                                                    iterations=args.num_iterations),
+
+        TestMode.MEMORY: AbductionContractionMemoryTest(datasets=datasets,
+                                                        reasoners=args.reasoners,
+                                                        iterations=args.num_iterations),
+
+        TestMode.MOBILE: AbductionContractionMobileTest(datasets=datasets,
+                                                        reasoners=args.reasoners,
+                                                        iterations=args.num_iterations)
+    }[args.mode].start(args.resume_after)
+    return 0
+
+
+def classification_sub(args) -> int:
+    {
+        TestMode.CORRECTNESS: ClassificationCorrectnessTest(datasets=args.datasets,
+                                                            reasoners=args.reasoners),
+
+        TestMode.TIME: ClassificationTimeTest(datasets=args.datasets,
+                                              reasoners=args.reasoners,
+                                              all_syntaxes=args.all_syntaxes,
+                                              iterations=args.num_iterations),
+
+        TestMode.MEMORY: ClassificationMemoryTest(datasets=args.datasets,
+                                                  reasoners=args.reasoners,
+                                                  all_syntaxes=args.all_syntaxes,
+                                                  iterations=args.num_iterations),
+
+        TestMode.MOBILE: ClassificationMobileTest(datasets=args.datasets,
+                                                  reasoners=args.reasoners,
+                                                  iterations=args.num_iterations)
+    }[args.mode].start(args.resume_after)
+    return 0
+
+
+def consistency_sub(args) -> int:
+    {
+        TestMode.CORRECTNESS: ConsistencyCorrectnessTest(datasets=args.datasets,
+                                                         reasoners=args.reasoners),
+
+        TestMode.TIME: ConsistencyTimeTest(datasets=args.datasets,
+                                           reasoners=args.reasoners,
+                                           all_syntaxes=args.all_syntaxes,
+                                           iterations=args.num_iterations),
+
+        TestMode.MEMORY: ConsistencyMemoryTest(datasets=args.datasets,
+                                               reasoners=args.reasoners,
+                                               all_syntaxes=args.all_syntaxes,
+                                               iterations=args.num_iterations),
+
+        TestMode.MOBILE: ConsistencyMobileTest(datasets=args.datasets,
+                                               reasoners=args.reasoners,
+                                               iterations=args.num_iterations)
+    }[args.mode].start(args.resume_after)
+    return 0
+
+
+def info_sub(args) -> int:
+    InfoTest(datasets=args.datasets,
+             reasoners=args.reasoners).start(args.resume_after)
+    return 0
+
+
+# Utils
+
+
+def positive_int(value: str) -> int:
+    ivalue = int(value)
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError('{} is not a positive int.'.format(value))
+    return ivalue
