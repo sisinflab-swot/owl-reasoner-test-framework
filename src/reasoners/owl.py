@@ -22,7 +22,7 @@ class OWLSyntax:
     RDFXML = 'rdfxml'
     FUNCTIONAL = 'functional'
 
-    ALL = [RDFXML, FUNCTIONAL]
+    ALL = [FUNCTIONAL, RDFXML]
 
 
 class ReasoningTask:
@@ -31,6 +31,7 @@ class ReasoningTask:
     CONSISTENCY = 'consistency'
     NON_STANDARD = 'non-standard'
 
+    STANDARD = [CLASSIFICATION, CONSISTENCY]
     ALL = [CLASSIFICATION, CONSISTENCY, NON_STANDARD]
 
 
@@ -66,22 +67,19 @@ class OWLReasoner:
         pass
 
     @property
-    @abstractmethod
     def supported_syntaxes(self) -> List[str]:
         """The OWL syntaxes supported by the reasoner."""
-        pass
+        return OWLSyntax.ALL
 
     @property
-    @abstractmethod
-    def preferred_syntax(self) -> str:
-        """The default syntax used by the reasoner."""
-        pass
-
-    @property
-    @abstractmethod
     def supported_tasks(self) -> List[str]:
         """Reasoning tasks supported by the reasoner."""
-        pass
+        return ReasoningTask.STANDARD
+
+    @property
+    def preferred_syntax(self) -> str:
+        """The default syntax used by the reasoner."""
+        return self.supported_syntaxes[0]
 
     @property
     def is_mobile(self) -> bool:
@@ -167,7 +165,13 @@ class OWLReasoner:
 
     def _run(self, args: List[str], timeout: Optional[float], mode: str) -> Task:
         """Runs the reasoner."""
-        task = Task(self.path, args=args)
+        if self.path.endswith('.jar'):
+            if mode == TestMode.MEMORY:
+                task = Jar(self.path, jar_args=args, vm_opts=['-Xms1m'] + self.vm_opts)
+            else:
+                task = Jar(self.path, jar_args=args, vm_opts=self.vm_opts)
+        else:
+            task = Task(self.path, args=args)
 
         if mode == TestMode.MEMORY:
             task = Benchmark(task)

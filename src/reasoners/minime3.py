@@ -3,7 +3,6 @@ from typing import List, Union
 
 from src.pyutils import exc
 from src.pyutils.proc import Benchmark, Task
-from .java import JavaReasoner
 from .owl import (
     MetaArgs,
     OWLReasoner,
@@ -26,12 +25,8 @@ class MiniMEObjC3(OWLReasoner):
         return [OWLSyntax.RDFXML]
 
     @property
-    def preferred_syntax(self):
-        return OWLSyntax.RDFXML
-
-    @property
     def supported_tasks(self):
-        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
+        return ReasoningTask.ALL
 
     def __init__(self, path: str):
         super(MiniMEObjC3, self).__init__(path=path, owl_tool_path=None, vm_opts=None)
@@ -41,16 +36,19 @@ class MiniMEObjC3(OWLReasoner):
         return _get_args(task=task, mode=mode)
 
 
-class MiniMEJava3(JavaReasoner):
+class MiniMEJava3(OWLReasoner):
     """MiniME Java 3.0 reasoner wrapper."""
 
     @property
+    def name(self):
+        return 'Mini-ME Java 3.0'
+
+    @property
     def supported_tasks(self):
-        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
+        return ReasoningTask.ALL
 
     def __init__(self, path: str, vm_opts: List[str]):
-        super(MiniMEJava3, self).__init__(name='Mini-ME Java 3.0', path=path,
-                                          owl_tool_path=None, vm_opts=vm_opts)
+        super(MiniMEJava3, self).__init__(path=path, owl_tool_path=None, vm_opts=vm_opts)
         self.results_parser = MiniME3ResultsParser()
 
     def args(self, task: str, mode: str) -> List[str]:

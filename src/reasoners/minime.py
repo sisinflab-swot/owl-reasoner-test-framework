@@ -20,7 +20,7 @@ class MiniMEJava2(JavaReasoner):
 
     @property
     def supported_tasks(self):
-        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
+        return ReasoningTask.ALL
 
     def __init__(self, path: str, owl_tool_path: str, vm_opts: List[str]):
         super(MiniMEJava2, self).__init__(name='Mini-ME Java 2.0', path=path,
@@ -45,12 +45,8 @@ class MiniMESwift(OWLReasoner):
         return [OWLSyntax.RDFXML]
 
     @property
-    def preferred_syntax(self):
-        return OWLSyntax.RDFXML
-
-    @property
     def supported_tasks(self):
-        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
+        return ReasoningTask.ALL
 
     def args(self, task: str, mode: str) -> List[str]:
         if task == ReasoningTask.CLASSIFICATION:
@@ -77,12 +73,8 @@ class MiniMESwiftMobile(OWLReasoner):
         return [OWLSyntax.RDFXML]
 
     @property
-    def preferred_syntax(self):
-        return OWLSyntax.RDFXML
-
-    @property
     def supported_tasks(self):
-        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
+        return ReasoningTask.ALL
 
     @property
     def is_mobile(self):

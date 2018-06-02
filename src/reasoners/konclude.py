@@ -66,14 +66,6 @@ class Konclude(OWLReasoner):
     def supported_syntaxes(self):
         return [OWLSyntax.FUNCTIONAL]
 
-    @property
-    def preferred_syntax(self):
-        return OWLSyntax.FUNCTIONAL
-
-    @property
-    def supported_tasks(self):
-        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY]
-
     def args(self, task: str, mode: str) -> List[str]:
         if task == ReasoningTask.CLASSIFICATION:
             args = ['classification', '-i', MetaArgs.INPUT]
