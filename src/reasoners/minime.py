@@ -15,88 +15,16 @@ from .owl import (
 from .results import ConsistencyResults
 
 
-class MiniMEObjC3(OWLReasoner):
-    """Mini-ME Objective-C 3.0 reasoner wrapper."""
-
-    # Public methods
-
-    @classmethod
-    def get_args(cls, task: str, mode: str) -> List[str]:
-        if task == ReasoningTask.CLASSIFICATION:
-            args = ['classification', '-i', MetaArgs.INPUT]
-
-            if mode == TestMode.CORRECTNESS:
-                args.extend(['-o', MetaArgs.OUTPUT])
-        elif task == ReasoningTask.CONSISTENCY:
-            args = ['coherence', '-i', MetaArgs.INPUT]
-        else:
-            args = ['abduction-contraction', '-i', MetaArgs.INPUT, '-r', MetaArgs.REQUEST]
-
-        if mode != TestMode.CORRECTNESS:
-            args.append('-q')
-
-        args.append('-b')
-
-        return args
-
-    def __init__(self, path: str):
-        super(MiniMEObjC3, self).__init__(path=path, owl_tool_path=None, vm_opts=None)
-
-    # Overrides
-
-    @property
-    def name(self):
-        return 'Mini-ME ObjC 3.0'
-
-    @property
-    def supported_syntaxes(self):
-        return [OWLSyntax.RDFXML]
-
-    @property
-    def preferred_syntax(self):
-        return OWLSyntax.RDFXML
-
-    @property
-    def supported_tasks(self):
-        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
-
-    def args(self, task: str, mode: str) -> List[str]:
-        return self.__class__.get_args(task=task, mode=mode)
-
-
-class MiniMEJava3(JavaReasoner):
-    """MiniME Java 3.0 reasoner wrapper."""
-
-    # Public methods
-
-    def __init__(self, path: str, vm_opts: List[str]):
-        super(MiniMEJava3, self).__init__(name='Mini-ME Java 3.0', path=path,
-                                          owl_tool_path=None, vm_opts=vm_opts)
-
-    # Overrides
-
-    @property
-    def supported_tasks(self):
-        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
-
-    def args(self, task: str, mode: str) -> List[str]:
-        return MiniMEObjC3.get_args(task=task, mode=mode)
-
-
 class MiniMEJava2(JavaReasoner):
     """MiniME Java 2.0 reasoner wrapper."""
 
-    # Public methods
+    @property
+    def supported_tasks(self):
+        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
 
     def __init__(self, path: str, owl_tool_path: str, vm_opts: List[str]):
         super(MiniMEJava2, self).__init__(name='Mini-ME Java 2.0', path=path,
                                           owl_tool_path=owl_tool_path, vm_opts=vm_opts)
-
-    # Overrides
-
-    @property
-    def supported_tasks(self):
-        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
 
     def args(self, task: str, mode: str) -> List[str]:
         if task == ReasoningTask.NON_STANDARD:
@@ -107,8 +35,6 @@ class MiniMEJava2(JavaReasoner):
 
 class MiniMESwift(OWLReasoner):
     """MiniME Swift reasoner wrapper."""
-
-    # Overrides
 
     @property
     def name(self):
@@ -140,9 +66,27 @@ class MiniMESwift(OWLReasoner):
 
 
 class MiniMESwiftMobile(OWLReasoner):
-    """MiniME mobile reasoner wrapper."""
+    """MiniME Swift mobile reasoner wrapper."""
 
-    # Lifecycle
+    @property
+    def name(self):
+        return 'Mini-ME Swift mobile'
+
+    @property
+    def supported_syntaxes(self):
+        return [OWLSyntax.RDFXML]
+
+    @property
+    def preferred_syntax(self):
+        return OWLSyntax.RDFXML
+
+    @property
+    def supported_tasks(self):
+        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
+
+    @property
+    def is_mobile(self):
+        return True
 
     def __init__(self,
                  project: str,
@@ -166,28 +110,6 @@ class MiniMESwiftMobile(OWLReasoner):
         self._classification_test = classification_test
         self._consistency_test = consistency_test
         self._abduction_contraction_test = abduction_contraction_test
-
-    # Overrides
-
-    @property
-    def name(self):
-        return 'Mini-ME Swift mobile'
-
-    @property
-    def supported_syntaxes(self):
-        return [OWLSyntax.RDFXML]
-
-    @property
-    def preferred_syntax(self):
-        return OWLSyntax.RDFXML
-
-    @property
-    def supported_tasks(self):
-        return [ReasoningTask.CLASSIFICATION, ReasoningTask.CONSISTENCY, ReasoningTask.NON_STANDARD]
-
-    @property
-    def is_mobile(self):
-        return True
 
     def args(self, task: str, mode: str) -> List[str]:
         return []

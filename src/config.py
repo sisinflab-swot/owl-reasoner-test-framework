@@ -5,7 +5,8 @@ from typing import Dict, List, Optional
 from .reasoners.owl import OWLReasoner
 from .reasoners.java import JavaReasoner
 from .reasoners.konclude import Konclude
-from .reasoners.minime import MiniMEObjC3, MiniMEJava2, MiniMEJava3, MiniMESwift, MiniMESwiftMobile
+from .reasoners.minime import MiniMEJava2, MiniMESwift, MiniMESwiftMobile
+from .reasoners.minime3 import MiniMEJava3, MiniMEObjC3
 
 
 DEBUG = False
